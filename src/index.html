@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Editor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <header class="toolbar">
+            <div class="toolbar-left">
+                <button id="btn-open" title="Open (Ctrl+O)">
+                    <span class="icon">📂</span>
+                    <span class="label">Open</span>
+                </button>
+                <button id="btn-save" title="Save (Ctrl+S)">
+                    <span class="icon">💾</span>
+                    <span class="label">Save</span>
+                </button>
+            </div>
+            <div class="toolbar-center">
+                <span id="file-title">Untitled</span>
+                <span id="modified-indicator" class="hidden">*</span>
+            </div>
+            <div class="toolbar-right">
+                <button id="btn-toggle-mode" title="Toggle Mode (Ctrl+/)">
+                    <span class="icon">📝</span>
+                    <span class="label">Editor</span>
+                </button>
+                <span id="mode-indicator" class="status">WYSIWYG</span>
+            </div>
+        </header>
+        <main class="editor-container">
+            <div id="editor"></div>
+            <div id="source-editor-container" class="hidden">
+                <div id="line-numbers"></div>
+                <textarea id="source-editor" spellcheck="false"></textarea>
+            </div>
+        </main>
+    </div>
+    <script type="module" src="main.js"></script>
+</body>
+
+</html>

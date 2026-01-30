@@ -1,0 +1,423 @@
+/* Root variables */
+:root {
+    --bg-primary: #1e1e2e;
+    --bg-secondary: #313244;
+    --bg-tertiary: #45475a;
+    --text-primary: #cdd6f4;
+    --text-secondary: #a6adc8;
+    --accent: #89b4fa;
+    --accent-hover: #b4befe;
+    --border: #585b70;
+    --success: #a6e3a1;
+    --warning: #f9e2af;
+    --error: #f38ba8;
+    --editor-font: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono-font: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: var(--editor-font);
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+/* Toolbar */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.toolbar-left,
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toolbar-center {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+#modified-indicator {
+    color: var(--warning);
+    font-weight: bold;
+}
+
+#modified-indicator.hidden {
+    display: none;
+}
+
+.toolbar button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.toolbar button:hover {
+    background: var(--accent);
+    color: var(--bg-primary);
+    border-color: var(--accent);
+}
+
+.toolbar button:active {
+    transform: scale(0.97);
+}
+
+.toolbar button .icon {
+    font-size: 16px;
+}
+
+.toolbar .status {
+    font-size: 12px;
+    padding: 4px 8px;
+    background: var(--accent);
+    color: var(--bg-primary);
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Editor Container */
+.editor-container {
+    flex: 1;
+    overflow: auto;
+    padding: 32px;
+    background: var(--bg-primary);
+}
+
+#editor {
+    max-width: 900px;
+    margin: 0 auto;
+    min-height: 100%;
+}
+
+/* Milkdown Editor Styles */
+.milkdown {
+    font-family: var(--editor-font);
+    font-size: 16px;
+    line-height: 1.8;
+    color: var(--text-primary);
+    outline: none;
+}
+
+.milkdown .editor {
+    outline: none;
+}
+
+/* Hide source code markers when editing (prevent showing markdown syntax on focus) */
+.milkdown .ProseMirror-hideselection *::selection {
+    background: transparent;
+}
+
+/* Keep rendered view even when focused - hide markdown syntax markers */
+.milkdown [data-milkdown-type] > .milkdown-syntax,
+.milkdown .milkdown-syntax {
+    display: none !important;
+}
+
+/* Ensure heading markers stay hidden */
+.milkdown h1 .milkdown-syntax,
+.milkdown h2 .milkdown-syntax,
+.milkdown h3 .milkdown-syntax,
+.milkdown h4 .milkdown-syntax,
+.milkdown h5 .milkdown-syntax,
+.milkdown h6 .milkdown-syntax {
+    display: none !important;
+}
+
+/* Hide list markers source */
+.milkdown li .milkdown-syntax {
+    display: none !important;
+}
+
+/* Hide emphasis markers */
+.milkdown strong .milkdown-syntax,
+.milkdown em .milkdown-syntax {
+    display: none !important;
+}
+
+/* Hide code backticks */
+.milkdown code .milkdown-syntax {
+    display: none !important;
+}
+
+.milkdown p {
+    margin-bottom: 16px;
+}
+
+.milkdown h1 {
+    font-size: 2.5em;
+    font-weight: 700;
+    margin: 32px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+    color: var(--accent);
+}
+
+.milkdown h2 {
+    font-size: 2em;
+    font-weight: 600;
+    margin: 28px 0 14px;
+    color: var(--accent-hover);
+}
+
+.milkdown h3 {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin: 24px 0 12px;
+}
+
+.milkdown h4 {
+    font-size: 1.25em;
+    font-weight: 600;
+    margin: 20px 0 10px;
+}
+
+.milkdown h5, .milkdown h6 {
+    font-size: 1em;
+    font-weight: 600;
+    margin: 16px 0 8px;
+}
+
+.milkdown strong {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.milkdown em {
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.milkdown code {
+    font-family: var(--mono-font);
+    background: var(--bg-secondary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: var(--warning);
+}
+
+.milkdown pre {
+    background: var(--bg-secondary);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0;
+    border: 1px solid var(--border);
+}
+
+.milkdown pre code {
+    background: none;
+    padding: 0;
+    color: var(--text-primary);
+}
+
+.milkdown blockquote {
+    border-left: 4px solid var(--accent);
+    padding-left: 16px;
+    margin: 16px 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.milkdown ul, .milkdown ol {
+    margin: 16px 0;
+    padding-left: 24px;
+}
+
+.milkdown li {
+    margin: 8px 0;
+}
+
+.milkdown a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.milkdown a:hover {
+    border-bottom-color: var(--accent);
+}
+
+.milkdown hr {
+    border: none;
+    border-top: 2px solid var(--border);
+    margin: 24px 0;
+}
+
+.milkdown table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+}
+
+.milkdown th, .milkdown td {
+    border: 1px solid var(--border);
+    padding: 12px;
+    text-align: left;
+}
+
+.milkdown th {
+    background: var(--bg-secondary);
+    font-weight: 600;
+}
+
+.milkdown img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 16px 0;
+}
+
+/* Task list */
+.milkdown li[data-checked="true"],
+.milkdown li[data-checked="false"] {
+    list-style: none;
+    position: relative;
+}
+
+.milkdown li[data-checked="true"]::before {
+    content: "✅";
+    position: absolute;
+    left: -24px;
+}
+
+.milkdown li[data-checked="false"]::before {
+    content: "⬜";
+    position: absolute;
+    left: -24px;
+}
+
+/* Selection */
+.milkdown ::selection {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+/* Placeholder */
+.milkdown .placeholder {
+    color: var(--text-secondary);
+    pointer-events: none;
+}
+
+/* Focus styles */
+.milkdown:focus-within {
+    outline: none;
+}
+
+/* Scrollbar */
+.editor-container::-webkit-scrollbar {
+    width: 10px;
+}
+
+.editor-container::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+.editor-container::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 5px;
+}
+
+.editor-container::-webkit-scrollbar-thumb:hover {
+    background: var(--border);
+}
+
+/* Source Editor Mode */
+#source-editor-container {
+    display: flex;
+    max-width: 900px;
+    margin: 0 auto;
+    min-height: 100%;
+    font-family: var(--mono-font);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+#source-editor-container.hidden {
+    display: none;
+}
+
+#line-numbers {
+    padding: 16px 12px;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    text-align: right;
+    user-select: none;
+    -webkit-user-select: none;
+    color: var(--text-secondary);
+    min-width: 50px;
+    counter-reset: line;
+}
+
+#line-numbers .line-number {
+    display: block;
+    counter-increment: line;
+    height: 1.6em;
+}
+
+#line-numbers .line-number::before {
+    content: counter(line);
+}
+
+#source-editor {
+    flex: 1;
+    padding: 16px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    tab-size: 4;
+}
+
+#source-editor::selection {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+/* Mode indicator active state */
+#mode-indicator.editor-mode {
+    background: var(--success);
+}
+
+/* Hide WYSIWYG editor when in source mode */
+#editor.hidden {
+    display: none;
+}

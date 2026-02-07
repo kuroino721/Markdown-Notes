@@ -124,12 +124,27 @@ html, body {
 }
 
 /* Milkdown Editor Styles */
-.milkdown {
+.milkdown,
+.crepe {
     font-family: var(--editor-font);
     font-size: 16px;
-    line-height: 1.8;
+    line-height: var(--line-height);
     color: var(--text-primary);
     outline: none;
+}
+
+/* Force line height on inner elements */
+.milkdown .ProseMirror,
+.crepe .ProseMirror,
+.milkdown p,
+.crepe p,
+.milkdown h1, .milkdown h2, .milkdown h3, .milkdown h4, .milkdown h5, .milkdown h6,
+.crepe h1, .crepe h2, .crepe h3, .crepe h4, .crepe h5, .crepe h6,
+.milkdown ul, .milkdown ol,
+.crepe ul, .crepe ol,
+.milkdown li,
+.crepe li {
+    line-height: var(--line-height) !important;
 }
 
 .milkdown .editor {
@@ -173,8 +188,14 @@ html, body {
     display: none !important;
 }
 
-.milkdown p {
-    margin-bottom: 16px;
+.milkdown p,
+.crepe p {
+    margin-bottom: 0.5em;
+}
+
+.milkdown li,
+.crepe li {
+    margin: 0.2em 0;
 }
 
 .milkdown h1 {
@@ -253,14 +274,38 @@ html, body {
     font-style: italic;
 }
 
-.milkdown ul, .milkdown ol {
-    margin: 16px 0;
-    padding-left: 24px;
+/* Aggressive reset for lists inside editor */
+#editor li {
+    list-style: none !important;
 }
 
-.milkdown li {
-    margin: 8px 0;
+#editor li::marker {
+    display: none !important;
+    content: "" !important;
 }
+
+#editor li {
+    display: flex !important;
+    align-items: baseline !important;
+    margin: 0.2em 0 !important;
+}
+
+/* Hide Milkdown's internal bullet wrapper only for standard bullet lists 
+   Exclude task lists ([data-checked]) and ordered lists (inside ol - accounted for by selector) */
+#editor ul li:not([data-checked]) .label-wrapper {
+    display: none !important;
+}
+
+/* Custom Bullet - Apply only to standard ul items */
+#editor ul li:not([data-checked])::before {
+    content: "•";
+    margin-right: 0.5em;
+    font-weight: bold;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+
 
 .milkdown a {
     color: var(--accent);
@@ -364,7 +409,7 @@ html, body {
     min-height: 100%;
     font-family: var(--mono-font);
     font-size: 14px;
-    line-height: 1.6;
+    line-height: var(--line-height);
 }
 
 #source-editor-container.hidden {

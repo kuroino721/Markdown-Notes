@@ -237,9 +237,48 @@ async function saveWindowState() {
     }
 }
 
+// Setup settings
+function setupSettings() {
+    const settingsBtn = document.getElementById('btn-settings');
+    const settingsPanel = document.getElementById('settings-panel');
+    const lineHeightRange = document.getElementById('line-height-range');
+    const lineHeightValue = document.getElementById('line-height-value');
+
+    // Load saved setting
+    const savedLineHeight = localStorage.getItem('note-line-height') || '1.4';
+    document.documentElement.style.setProperty('--line-height', savedLineHeight);
+    lineHeightRange.value = savedLineHeight;
+    lineHeightValue.textContent = savedLineHeight;
+
+    // Toggle panel
+    settingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        settingsPanel.classList.toggle('hidden');
+    });
+
+    // Close panel when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!settingsPanel.classList.contains('hidden') && 
+            !settingsPanel.contains(e.target) && 
+            e.target !== settingsBtn) {
+            settingsPanel.classList.add('hidden');
+        }
+    });
+
+    // Handle range change
+    lineHeightRange.addEventListener('input', (e) => {
+        const value = e.target.value;
+        lineHeightValue.textContent = value;
+        document.documentElement.style.setProperty('--line-height', value);
+        localStorage.setItem('note-line-height', value);
+    });
+}
+
 // Setup event listeners
 function setupEventListeners() {
+    setupSettings();
     document.getElementById('btn-toggle').addEventListener('click', toggleEditorMode);
+
     document.getElementById('btn-delete').addEventListener('click', deleteNote);
 
     // Source editor input

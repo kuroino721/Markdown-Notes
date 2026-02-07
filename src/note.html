@@ -9,6 +9,7 @@
     <style>
         :root {
             --note-color: #fef3c7;
+            --line-height: 1.4;
         }
 
         body {
@@ -166,6 +167,36 @@
         .note-editor.hidden {
             display: none;
         }
+
+        /* Settings Panel */
+        .settings-panel {
+            position: absolute;
+            top: 40px;
+            right: 12px;
+            background: #fff;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            width: 200px;
+        }
+
+        .settings-panel.hidden {
+            display: none;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        .setting-item input[type="range"] {
+            flex: 1;
+        }
     </style>
 </head>
 
@@ -174,10 +205,21 @@
         <header class="note-header" data-tauri-drag-region>
             <span class="title" id="note-title">ノート</span>
             <div class="actions">
+                <button id="btn-settings" title="設定">⚙️</button>
                 <button id="btn-toggle" title="モード切替 (Ctrl+/)">📝</button>
                 <button id="btn-delete" class="delete" title="削除">🗑️</button>
             </div>
         </header>
+
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="settings-panel hidden">
+            <div class="setting-item">
+                <label>行間</label>
+                <input type="range" id="line-height-range" min="0.8" max="2.0" step="0.1" value="1.4">
+                <span id="line-height-value">1.4</span>
+            </div>
+        </div>
+
         <main class="note-editor" id="editor-container">
             <div id="editor">
                 <div contenteditable="true" style="min-height: 100%; padding: 8px; outline: none;">読み込み中...</div>

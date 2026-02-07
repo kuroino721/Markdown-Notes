@@ -1,5 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { Crepe, CrepeFeature } from '@milkdown/crepe';
+import '@milkdown/crepe/theme/common/style.css';
+import '@milkdown/crepe/theme/frame.css';
 
 // Global state
 let noteId = null;
@@ -7,6 +10,7 @@ let noteData = null;
 let isEditorMode = false;
 let saveTimeout = null;
 let lastSavedContent = '';
+let crepeInstance = null;
 
 // Get note ID from URL
 function getNoteIdFromUrl() {
@@ -14,37 +18,98 @@ function getNoteIdFromUrl() {
     return params.get('id');
 }
 
-// Initialize editor with content
-function initEditor(content) {
+// Initialize Milkdown Crepe editor with content
+async function initEditor(content) {
     const editorEl = document.getElementById('editor');
     editorEl.innerHTML = '';
     
-    const proseMirror = document.createElement('div');
-    proseMirror.className = 'ProseMirror';
-    proseMirror.contentEditable = 'true';
-    proseMirror.style.cssText = 'outline: none; min-height: 100%; white-space: pre-wrap;';
-    proseMirror.textContent = content || '';
-    editorEl.appendChild(proseMirror);
+    // Destroy previous instance if exists
+    if (crepeInstance) {
+        try {
+            await crepeInstance.destroy();
+        } catch (e) {
+            console.warn('Failed to destroy previous editor:', e);
+        }
+        crepeInstance = null;
+    }
     
     lastSavedContent = content || '';
-    console.log('Simple editor initialized');
-
-    // Track changes
-    proseMirror.addEventListener('input', () => {
-        scheduleAutoSave();
-    });
     
-    // Focus the editor
-    proseMirror.focus();
+    try {
+        // Create Milkdown Crepe instance
+        crepeInstance = new Crepe({
+            root: editorEl,
+            defaultValue: content || '',
+            features: {
+                [CrepeFeature.CodeMirror]: false,  // Disable CodeMirror for simplicity
+                [CrepeFeature.Latex]: false,  // Disable LaTeX for simplicity
+            },
+        });
+        
+        // Create the editor
+        await crepeInstance.create();
+        
+        // Listen for changes using editor's update listener
+        crepeInstance.on((api) => {
+            api.updated(() => {
+                scheduleAutoSave();
+            });
+        });
+        
+        console.log('Milkdown Crepe editor initialized');
+    } catch (error) {
+        console.error('Failed to initialize Milkdown Crepe:', error);
+        // Fallback to simple contentEditable
+        const fallbackEl = document.createElement('div');
+        fallbackEl.className = 'ProseMirror';
+        fallbackEl.contentEditable = 'true';
+        fallbackEl.style.cssText = 'outline: none; min-height: 100%; white-space: pre-wrap;';
+        fallbackEl.textContent = content || '';
+        editorEl.appendChild(fallbackEl);
+        
+        fallbackEl.addEventListener('input', () => {
+            scheduleAutoSave();
+        });
+    }
 }
 
 // Get content from editor
 function getEditorContent() {
+    if (crepeInstance) {
+        try {
+            return crepeInstance.getMarkdown();
+        } catch (e) {
+            console.warn('Failed to get markdown from Crepe:', e);
+        }
+    }
+    
+    // Fallback for simple editor
     const proseMirror = document.querySelector('#editor .ProseMirror');
     if (proseMirror) {
         return proseMirror.textContent;
     }
     return lastSavedContent;
+}
+
+// Set content to editor
+async function setEditorContent(content) {
+    if (crepeInstance) {
+        try {
+            // Destroy and recreate with new content
+            await crepeInstance.destroy();
+            crepeInstance = null;
+            await initEditor(content);
+            return;
+        } catch (e) {
+            console.warn('Failed to set content via Crepe:', e);
+        }
+    }
+    
+    // Fallback
+    const proseMirror = document.querySelector('#editor .ProseMirror');
+    if (proseMirror) {
+        proseMirror.textContent = content;
+    }
 }
 
 // Schedule auto-save with debounce
@@ -99,7 +164,7 @@ async function saveNote() {
 }
 
 // Toggle editor mode
-function toggleEditorMode() {
+async function toggleEditorMode() {
     isEditorMode = !isEditorMode;
 
     const editorContainer = document.getElementById('editor-container');
@@ -115,7 +180,7 @@ function toggleEditorMode() {
 
         editorContainer.classList.add('hidden');
         sourceContainer.classList.add('active');
-        modeIndicator.textContent = 'Editor';
+        modeIndicator.textContent = 'Source';
         modeIndicator.classList.add('editor-mode');
         toggleBtn.textContent = '👁️';
 
@@ -131,7 +196,7 @@ function toggleEditorMode() {
         modeIndicator.classList.remove('editor-mode');
         toggleBtn.textContent = '📝';
 
-        initEditor(content);
+        await setEditorContent(content);
     }
 }
 
@@ -142,6 +207,9 @@ async function deleteNote() {
     if (confirm('このノートを削除しますか？')) {
         try {
             await invoke('delete_note', { noteId });
+            // Close window after deletion
+            const currentWindow = getCurrentWindow();
+            await currentWindow.close();
         } catch (error) {
             console.error('Failed to delete note:', error);
         }
@@ -242,7 +310,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.documentElement.style.setProperty('--note-color', noteData.color);
             }
 
-            initEditor(noteData.content);
+            await initEditor(noteData.content);
             
             const currentWindow = getCurrentWindow();
             currentWindow.setTitle(noteData.title);
@@ -258,7 +326,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 window_state: { x: 100, y: 100, width: 300, height: 400 },
                 color: '#fef3c7'
             };
-            initEditor('');
+            await initEditor('');
         }
     } catch (error) {
         console.error('Failed to load note:', error);

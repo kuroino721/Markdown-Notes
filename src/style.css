@@ -421,3 +421,163 @@ html, body {
 #editor.hidden {
     display: none;
 }
+
+/* Milkdown Crepe overrides for sticky notes */
+.note-editor .milkdown,
+.note-editor .crepe {
+    background: transparent !important;
+    font-family: var(--editor-font);
+}
+
+.note-editor .ProseMirror {
+    background: transparent !important;
+    color: #1a1a1a;
+    padding: 0 !important;
+    outline: none;
+}
+
+.note-editor .ProseMirror:focus {
+    outline: none;
+}
+
+/* Override Crepe toolbar colors for sticky notes */
+.note-editor .crepe .crepe-toolbar {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+}
+
+/* Crepe feature menu styling for sticky notes */
+.note-editor .crepe .crepe-slash-menu,
+.note-editor .crepe .crepe-feature-menu {
+    background: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Heading styles for sticky notes */
+.note-editor h1,
+.note-editor h2,
+.note-editor h3,
+.note-editor h4,
+.note-editor h5,
+.note-editor h6 {
+    color: #333;
+    margin-top: 0.5em;
+    margin-bottom: 0.3em;
+}
+
+.note-editor h1 {
+    font-size: 1.5em;
+    border-bottom: none;
+}
+
+.note-editor h2 {
+    font-size: 1.3em;
+}
+
+.note-editor h3 {
+    font-size: 1.1em;
+}
+
+/* List styling for sticky notes */
+.note-editor ul,
+.note-editor ol {
+    padding-left: 1.5em;
+    margin: 0.5em 0;
+}
+
+.note-editor li {
+    margin: 0.2em 0;
+}
+
+/* Code styling for sticky notes */
+.note-editor code {
+    background: rgba(0, 0, 0, 0.08);
+    color: #c7254e;
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9em;
+}
+
+.note-editor pre {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 8px;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.note-editor pre code {
+    background: transparent;
+    padding: 0;
+    color: #333;
+}
+
+/* Blockquote styling for sticky notes */
+.note-editor blockquote {
+    border-left: 3px solid rgba(0, 0, 0, 0.2);
+    padding-left: 12px;
+    margin: 0.5em 0;
+    color: #555;
+    font-style: italic;
+}
+
+/* Link styling for sticky notes */
+.note-editor a {
+    color: #0066cc;
+    text-decoration: underline;
+}
+
+/* Selection color for sticky notes */
+.note-editor ::selection {
+    background: rgba(59, 130, 246, 0.3);
+}
+
+/* Strong and emphasis */
+.note-editor strong {
+    font-weight: 700;
+}
+
+.note-editor em {
+    font-style: italic;
+}
+
+/* Horizontal rule */
+.note-editor hr {
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.15);
+    margin: 1em 0;
+}
+
+/* Table styling for sticky notes */
+.note-editor table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5em 0;
+    font-size: 0.9em;
+}
+
+.note-editor th,
+.note-editor td {
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    padding: 6px 8px;
+    text-align: left;
+}
+
+.note-editor th {
+    background: rgba(0, 0, 0, 0.05);
+    font-weight: 600;
+}
+
+/* Task list items */
+.note-editor li[data-checked] {
+    list-style: none;
+}
+
+.note-editor li[data-checked]::before {
+    content: "☐ ";
+}
+
+.note-editor li[data-checked="true"]::before {
+    content: "☑ ";
+}

@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\*\shell\MarkdownEditor]
+@="Open with Markdown Editor"
+"Icon"="C:\\Program Files\\Markdown Editor\\app.exe"
+
+[HKEY_CLASSES_ROOT\*\shell\MarkdownEditor\command]
+@="\"C:\\Program Files\\Markdown Editor\\app.exe\" \"%1\""

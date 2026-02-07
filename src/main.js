@@ -7,6 +7,7 @@ import { clipboard } from '@milkdown/kit/plugin/clipboard';
 // Tauri imports
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
+import { listen } from '@tauri-apps/api/event';
 
 // Global state
 let editor = null;
@@ -469,26 +470,7 @@ async function openFile() {
                 // Recreate editor with new content
                 const editorEl = document.getElementById('editor');
                 editorEl.innerHTML = '';
-                
-                editor = await Editor.make()
-                    .config((ctx) => {
-                        ctx.set(rootCtx, editorEl);
-                        ctx.set(defaultValueCtx, content);
-                        ctx.set(listenerCtx, {
-                            markdownUpdated: (ctx, markdown, prevMarkdown) => {
-                                if (markdown !== prevMarkdown) {
-                                    setModified(true);
-                                    currentMarkdown = markdown;
-                                }
-                            }
-                        });
-                    })
-                    .use(commonmark)
-                    .use(gfm)
-                    .use(history)
-                    .use(listener)
-                    .use(clipboard)
-                    .create();
+                await initEditorWithContent(content);
             }
 
             // Update UI
@@ -587,5 +569,31 @@ function setupEventListeners() {
 document.addEventListener('DOMContentLoaded', async () => {
     await initEditor();
     setupEventListeners();
+    
+    // Listen for file open event from command line arguments
+    listen('open-file', async (event) => {
+        const filePath = event.payload;
+        if (filePath) {
+            try {
+                const content = await readTextFile(filePath);
+                currentFilePath = filePath;
+                currentMarkdown = content;
+                
+                // Recreate editor with new content
+                const editorEl = document.getElementById('editor');
+                editorEl.innerHTML = '';
+                await initEditorWithContent(content);
+                
+                // Update UI
+                const fileName = filePath.split(/[/\\]/).pop();
+                setFileTitle(fileName);
+                setModified(false);
+                
+                console.log('Opened file from command line:', filePath);
+            } catch (error) {
+                console.error('Failed to open file from command line:', error);
+            }
+        }
+    });
 });
 

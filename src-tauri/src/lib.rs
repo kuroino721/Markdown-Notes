@@ -1,10 +1,122 @@
-use tauri::Emitter;
+mod notes;
+
+use notes::{Note, NotesStore};
+use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+
+#[tauri::command]
+fn create_note(app: tauri::AppHandle) -> Result<Note, String> {
+    let mut store = NotesStore::load(&app);
+    let note = Note::new();
+    store.add_note(note.clone());
+    store.save(&app)?;
+
+    // Temporarily disabled window creation to test
+    // let note_id = note.id.clone();
+    // let url = WebviewUrl::App(format!("note.html?id={}", note_id).into());
+    // let _window = WebviewWindowBuilder::new(&app, &note_id, url)
+    //     .title("ノート")
+    //     .inner_size(300.0, 400.0)
+    //     .position(note.window_state.x as f64, note.window_state.y as f64)
+    //     .decorations(true)
+    //     .resizable(true)
+    //     .build()
+    //     .map_err(|e| e.to_string())?;
+
+    Ok(note)
+}
+
+#[tauri::command]
+fn get_all_notes(app: tauri::AppHandle) -> Vec<Note> {
+    let store = NotesStore::load(&app);
+    store.notes
+}
+
+#[tauri::command]
+fn get_note(app: tauri::AppHandle, note_id: String) -> Option<Note> {
+    let store = NotesStore::load(&app);
+    store.get_note(&note_id).cloned()
+}
+
+#[tauri::command]
+fn save_note(app: tauri::AppHandle, note: Note) -> Result<(), String> {
+    let mut store = NotesStore::load(&app);
+    store.update_note(note);
+    store.save(&app)
+}
+
+#[tauri::command]
+fn delete_note(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
+    let mut store = NotesStore::load(&app);
+    store.delete_note(&note_id);
+    store.save(&app)?;
+
+    // Close the window if it exists
+    if let Some(window) = app.get_webview_window(&note_id) {
+        window.close().ok();
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+fn update_window_state(
+    app: tauri::AppHandle,
+    note_id: String,
+    x: i32,
+    y: i32,
+    width: u32,
+    height: u32,
+) -> Result<(), String> {
+    let mut store = NotesStore::load(&app);
+    if let Some(note) = store.notes.iter_mut().find(|n| n.id == note_id) {
+        note.window_state.x = x;
+        note.window_state.y = y;
+        note.window_state.width = width;
+        note.window_state.height = height;
+    }
+    store.save(&app)
+}
+
+#[tauri::command]
+fn open_note_window(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
+    // Check if window already exists
+    if app.get_webview_window(&note_id).is_some() {
+        return Ok(());
+    }
+
+    let store = NotesStore::load(&app);
+    if let Some(note) = store.get_note(&note_id) {
+        let url = WebviewUrl::App(format!("note.html?id={}", note_id).into());
+        WebviewWindowBuilder::new(&app, &note_id, url)
+            .title(&note.title)
+            .inner_size(
+                note.window_state.width as f64,
+                note.window_state.height as f64,
+            )
+            .position(note.window_state.x as f64, note.window_state.y as f64)
+            .decorations(true)
+            .resizable(true)
+            .build()
+            .map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .invoke_handler(tauri::generate_handler![
+            create_note,
+            get_all_notes,
+            get_note,
+            save_note,
+            delete_note,
+            update_window_state,
+            open_note_window,
+        ])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

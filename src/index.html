@@ -4,40 +4,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Markdown Editor</title>
+    <title>Markdown Notes</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Main window specific styles */
+        body {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .app-header h1 {
+            color: #fff;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .app-header h1 .icon {
+            font-size: 28px;
+        }
+
+        .btn-new-note {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1a1a1a;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+        }
+
+        .btn-new-note:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(251, 191, 36, 0.4);
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .note-card {
+            background: #fef3c7;
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            min-height: 120px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .note-card:hover {
+            transform: translateY(-4px) rotate(1deg);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .note-card .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .note-card .preview {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .note-card .timestamp {
+            position: absolute;
+            bottom: 8px;
+            right: 12px;
+            font-size: 10px;
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        .note-card .delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: transparent;
+            border: none;
+            padding: 4px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 14px;
+        }
+
+        .note-card:hover .delete-btn {
+            opacity: 0.6;
+        }
+
+        .note-card .delete-btn:hover {
+            opacity: 1;
+            color: #dc2626;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            margin: 0;
+        }
+
+        /* Color variations for notes */
+        .note-card[data-color="#fef3c7"] {
+            background: #fef3c7;
+        }
+
+        .note-card[data-color="#d1fae5"] {
+            background: #d1fae5;
+        }
+
+        .note-card[data-color="#dbeafe"] {
+            background: #dbeafe;
+        }
+
+        .note-card[data-color="#fce7f3"] {
+            background: #fce7f3;
+        }
+
+        .note-card[data-color="#e9d5ff"] {
+            background: #e9d5ff;
+        }
+    </style>
 </head>
 
 <body>
     <div class="app-container">
-        <header class="toolbar">
-            <div class="toolbar-left">
-                <button id="btn-open" title="Open (Ctrl+O)">
-                    <span class="icon">📂</span>
-                    <span class="label">Open</span>
-                </button>
-                <button id="btn-save" title="Save (Ctrl+S)">
-                    <span class="icon">💾</span>
-                    <span class="label">Save</span>
-                </button>
-            </div>
-            <div class="toolbar-center">
-                <span id="file-title">Untitled</span>
-                <span id="modified-indicator" class="hidden">*</span>
-            </div>
-            <div class="toolbar-right">
-                <button id="btn-toggle-mode" title="Toggle Mode (Ctrl+/)">
-                    <span class="icon">📝</span>
-                    <span class="label">Editor</span>
-                </button>
-                <span id="mode-indicator" class="status">WYSIWYG</span>
-            </div>
+        <header class="app-header">
+            <h1>
+                <span class="icon">📝</span>
+                Markdown Notes
+            </h1>
+            <button class="btn-new-note" id="btn-new">
+                <span>➕</span>
+                新規ノート
+            </button>
         </header>
-        <main class="editor-container">
-            <div id="editor"></div>
-            <div id="source-editor-container" class="hidden">
-                <div id="line-numbers"></div>
-                <textarea id="source-editor" spellcheck="false"></textarea>
+        <main>
+            <div class="notes-grid" id="notes-grid">
+                <!-- Notes will be rendered here -->
+            </div>
+            <div class="empty-state" id="empty-state" style="display: none;">
+                <div class="icon">📋</div>
+                <p>ノートがありません。新規ノートを作成してください。</p>
             </div>
         </main>
     </div>

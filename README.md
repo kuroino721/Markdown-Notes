@@ -11,6 +11,7 @@ RustとeguiフレームワークでTyporaライクなMarkdownエディタを構�
 | Markdownパーサー | pulldown-cmark 0.12 |
 | ファイルダイアログ | rfd 0.15 |
 
+
 ## プロジェクト構成
 
 ```
@@ -22,14 +23,24 @@ src/
 └── shortcuts.rs  # キーボードショートカット処理
 ```
 
-## 起動・ビルド
+## 環境構築
+
+以下のコマンドで依存関係をインストール・起動してください。
 
 ```powershell
-# 開発ビルド
-cargo run
+# 1. 依存関係のインストール（初回のみ）
+npm install
 
-# リリースビルド
-cargo build --release
+# 2. 開発サーバーの起動（Rust + Vite）
+npm run tauri dev
+```
+
+## ビルド
+
+アプリケーションの配布用ビルドを作成するには：
+
+```powershell
+npm run tauri build
 ```
 
 ## 実装済み機能

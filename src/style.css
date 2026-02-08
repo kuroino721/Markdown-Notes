@@ -198,6 +198,52 @@ html, body {
     margin: 0;
 }
 
+/* Remove margin from nested lists */
+.milkdown ul ul,
+.milkdown ul ol,
+.milkdown ol ul,
+.milkdown ol ol,
+.crepe ul ul,
+.crepe ul ol,
+.crepe ol ul,
+.crepe ol ol {
+    margin: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+/* Adjust list item wrapper height to match line height */
+.milkdown .milkdown-list-item-block li .label-wrapper,
+.milkdown .milkdown-list-item-block li .label-wrapper .label {
+    height: auto !important;
+    min-height: 1em;
+}
+
+/* Remove margin from paragraphs inside list items */
+.milkdown li p,
+.crepe li p {
+    margin: 0 !important;
+}
+
+/* Remove all spacing from list structure elements */
+.milkdown .milkdown-list-item-block,
+.milkdown .list-item,
+.milkdown .list-item > .children,
+.milkdown .list-item .content-dom {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Ensure nested ul has no extra spacing */
+.milkdown .content-dom > ul,
+.milkdown .content-dom > ol {
+    margin: 0 !important;
+    padding-left: 1em !important;
+}
+
+
+
+
 .milkdown h1 {
     font-size: 2.5em;
     font-weight: 700;

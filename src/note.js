@@ -5,6 +5,115 @@ import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 
+// Global editor view reference
+let editorView = null;
+
+// Table autocomplete handler
+function setupTableAutoComplete(editorElement) {
+    editorElement.addEventListener('keydown', async (event) => {
+        if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.metaKey) {
+            return;
+        }
+        
+        console.log('Enter pressed, checking for table pattern...');
+        
+        if (!editorView) {
+            console.log('Editor view not available');
+            return;
+        }
+        
+        console.log('Found editor view');
+        
+        const { state } = editorView;
+        const { selection } = state;
+        const { $from } = selection;
+        
+        // Get the full text of the current text block (paragraph)
+        const parent = $from.parent;
+        if (!parent.isTextblock) {
+            console.log('Not in a text block');
+            return;
+        }
+        
+        const lineText = parent.textContent;
+        console.log('Current line text:', lineText);
+        
+        // Check if the line matches table header pattern: | ... |
+        // Must start with | and end with |, with content between pipes
+        const trimmedLine = lineText.trim();
+        const tableRowRegex = /^\|[^|]+(\|[^|]*)*\|$/;
+        
+        if (!tableRowRegex.test(trimmedLine)) {
+            console.log('Does not match table pattern');
+            return;
+        }
+        
+        // Count the number of columns
+        const pipes = (trimmedLine.match(/\|/g) || []).length;
+        if (pipes < 2) return;
+        
+        const columns = pipes - 1;
+        console.log('Detected table with', columns, 'columns');
+        
+        // Prevent the default Enter behavior
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Build the separator row: |---|---|...|
+        const separator = '|' + Array(columns).fill('---').join('|') + '|';
+        
+        // Build the empty data row
+        const emptyRow = '|' + Array(columns).fill('   ').join('|') + '|';
+        
+        // Get current markdown content
+        if (!crepeInstance) {
+            console.log('Crepe instance not available');
+            return;
+        }
+        
+        try {
+            let currentMarkdown = crepeInstance.getMarkdown();
+            console.log('Current markdown:', currentMarkdown);
+            
+            // Remove escape characters before pipes (Milkdown escapes | as \|)
+            currentMarkdown = currentMarkdown.replace(/\\\|/g, '|');
+            console.log('Unescaped markdown:', currentMarkdown);
+            
+            // Find the line with the table header and add separator after it
+            // The current line should be the table header
+            const lines = currentMarkdown.split('\n');
+            const newLines = [];
+            let inserted = false;
+            
+            for (let i = 0; i < lines.length; i++) {
+                newLines.push(lines[i]);
+                // Check if this line matches our table header (compare unescaped)
+                const lineUnescaped = lines[i].trim();
+                if (!inserted && lineUnescaped === trimmedLine) {
+                    // Add separator and empty row after this line
+                    newLines.push(separator);
+                    newLines.push(emptyRow);
+                    inserted = true;
+                }
+            }
+            
+            if (inserted) {
+                const newMarkdown = newLines.join('\n');
+                console.log('New markdown:', newMarkdown);
+                
+                // Destroy and recreate editor with new content
+                await crepeInstance.destroy();
+                crepeInstance = null;
+                await initEditor(newMarkdown);
+                
+                console.log('Table created successfully');
+            }
+        } catch (e) {
+            console.error('Failed to create table:', e);
+        }
+    }, true); // Use capture phase to handle before ProseMirror
+}
+
 // Global state
 let noteId = null;
 let noteData = null;
@@ -50,12 +159,26 @@ async function initEditor(content) {
         // Create the editor
         await crepeInstance.create();
         
+        // Get editor view after creation using editor.action
+        try {
+            const { editorViewCtx } = await import('@milkdown/core');
+            crepeInstance.editor.action((ctx) => {
+                editorView = ctx.get(editorViewCtx);
+                console.log('Got editor view via action:', editorView);
+            });
+        } catch (e) {
+            console.error('Failed to get editor view:', e);
+        }
+        
         // Listen for changes using editor's update listener
         crepeInstance.on((api) => {
             api.updated(() => {
                 scheduleAutoSave();
             });
         });
+        
+        // Setup table autocomplete feature
+        setupTableAutoComplete(editorEl);
         
         console.log('Milkdown Crepe editor initialized');
     } catch (error) {

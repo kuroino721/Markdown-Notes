@@ -123,6 +123,47 @@
             color: #444;
         }
 
+        /* List styling for note editor - fix bullet display */
+        .note-editor ul,
+        .note-editor ol {
+            padding-left: 1em !important;
+            margin: 0.3em 0 !important;
+        }
+
+        .note-editor #editor li {
+            margin: 0.1em 0 !important;
+            display: flex !important;
+            align-items: baseline !important;
+            list-style: none !important;
+        }
+
+        /* Hide Milkdown's internal bullet markers */
+        .note-editor .label-wrapper {
+            display: none !important;
+        }
+
+        /* Custom bullet for unordered lists */
+        .note-editor #editor ul li::before {
+            content: "\2022" !important;
+            margin-right: 0.3em;
+            color: #333;
+        }
+
+        /* Custom number for ordered lists */
+        .note-editor #editor ol {
+            counter-reset: list-counter;
+        }
+
+        .note-editor #editor ol li {
+            counter-increment: list-counter;
+        }
+
+        .note-editor #editor ol li::before {
+            content: counter(list-counter) "." !important;
+            margin-right: 0.3em;
+            color: #333;
+        }
+
         /* Mode indicator */
         .mode-badge {
             padding: 2px 6px;

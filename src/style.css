@@ -344,7 +344,7 @@ html, body {
 
 /* Custom Bullet - Apply only to standard ul items */
 #editor ul li:not([data-checked])::before {
-    content: "•";
+    content: "\2022";
     margin-right: 0.5em;
     font-weight: bold;
     color: var(--text-secondary);

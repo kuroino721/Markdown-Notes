@@ -11,15 +11,17 @@
                 <feMergeNode in="SourceGraphic"/>
             </feMerge>
         </filter>
-        <linearGradient id="noteGradient" x1="50" y1="50" x2="462" y2="462" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#3B82F6"/> <!-- Blue 500 -->
-            <stop offset="1" stop-color="#2563EB"/> <!-- Blue 600 -->
+        <linearGradient id="noteGradientDev" x1="50" y1="50" x2="462" y2="462" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#10B981"/> <!-- Emerald 500 -->
+            <stop offset="1" stop-color="#059669"/> <!-- Emerald 600 -->
         </linearGradient>
     </defs>
 
     <!-- Note Body -->
-    <rect x="56" y="56" width="400" height="400" rx="60" fill="url(#noteGradient)" filter="url(#softShadow)"/>
+    <rect x="56" y="56" width="400" height="400" rx="60" fill="url(#noteGradientDev)" filter="url(#softShadow)"/>
     
-    <!-- M Glyph -->
-    <path d="M156 330V180H196L256 250L316 180H356V330H316V230L256 300L196 230V330H156Z" fill="white"/>
+    <!-- DEV Text -->
+    <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="160" fill="white" letter-spacing="-5">
+        DEV
+    </text>
 </svg>

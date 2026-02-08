@@ -78,10 +78,12 @@ function getEditorContent() {
     if (crepeInstance) {
         try {
             let markdown = crepeInstance.getMarkdown();
-            // Remove extra blank lines between list items
-            // Match a list line followed by blank line(s) and another list line
+            // Remove extra blank lines between list items (including nested lists)
+            // Match any list line followed by blank line(s) and another list line at any indent level
             markdown = markdown.replace(/^([ \t]*[-*+][ \t].*)(\n\n+)([ \t]*[-*+][ \t])/gm, '$1\n$3');
-            markdown = markdown.replace(/^([ \t]*\d+\.[ \t].*)(\n\n+)([ \t]*\d+\.[ \t])/gm, '$1\n$3');
+            markdown = markdown.replace(/^([ \t]*\d+\.[ \t].*)(\n\n+)([ \t]*[-*+\d])/gm, '$1\n$3');
+            // Also handle transitions from unordered to nested or vice versa
+            markdown = markdown.replace(/^([ \t]*[-*+][ \t].*)(\n\n+)([ \t]+[-*+\d])/gm, '$1\n$3');
             return markdown;
         } catch (e) {
             console.warn('Failed to get markdown from Crepe:', e);

@@ -1,0 +1,43 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background: White Circle for contrast (Optional, generally transparent for apps, but good for preview) -->
+    <!-- <circle cx="256" cy="256" r="256" fill="white"/> -->
+    
+    <!-- Drop Shadow Filter -->
+    <defs>
+        <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="15"/>
+            <feOffset dx="0" dy="10" result="offsetblur"/>
+            <feComponentTransfer>
+                <feFuncA type="linear" slope="0.3"/>
+            </feComponentTransfer>
+            <feMerge>
+                <feMergeNode/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        <linearGradient id="blueGradient1" x1="100" y1="100" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#3B82F6"/> <!-- Blue 500 -->
+            <stop offset="1" stop-color="#1D4ED8"/> <!-- Blue 700 -->
+        </linearGradient>
+        <linearGradient id="blueGradient2" x1="150" y1="100" x2="450" y2="400" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#60A5FA"/> <!-- Blue 400 -->
+            <stop offset="1" stop-color="#2563EB"/> <!-- Blue 600 -->
+        </linearGradient>
+    </defs>
+
+    <!-- Main Icon Shape: "M" formed by folded paper -->
+    <g filter="url(#dropShadow)">
+        <!-- Left Leg / Back Layer -->
+        <path d="M110 400L110 120L256 260L160 400H110Z" fill="url(#blueGradient1)"/>
+        
+        <!-- Right Leg / Back Layer -->
+        <path d="M402 400L402 120L256 260L352 400H402Z" fill="url(#blueGradient1)"/>
+
+        <!-- Middle Fold / Front Layer -->
+        <!-- This creates the lighter, overlapping part of the M -->
+        <path d="M110 120L256 280L402 120L256 180L110 120Z" fill="#93C5FD" fill-opacity="0.9"/>
+        
+        <!-- Main Strokes for clarity -->
+        <path d="M130 140V380L256 280L382 380V140L256 240L130 140Z" fill="url(#blueGradient2)"/>
+    </g>
+</svg>

@@ -1,6 +1,7 @@
 mod notes;
 
 use notes::{Note, NotesStore};
+use tauri::image::Image;
 use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 #[tauri::command]
@@ -124,6 +125,15 @@ pub fn run() {
                         .level(log::LevelFilter::Info)
                         .build(),
                 )?;
+
+                // Set dev icon for all windows
+                let app_handle = app.handle();
+                let icon_bytes = include_bytes!("../icons/dev-icon.png");
+                let icon = Image::from_bytes(icon_bytes).expect("failed to parse icon");
+
+                for window in app_handle.webview_windows().values() {
+                    let _ = window.set_icon(icon.clone());
+                }
             }
 
             // Get command line arguments and send file path to frontend

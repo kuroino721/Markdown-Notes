@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { readTextFile } from '@tauri-apps/plugin-fs';
+import { ask } from '@tauri-apps/plugin-dialog';
 
 // Render notes grid
 async function renderNotes() {
@@ -60,7 +61,13 @@ async function renderNotes() {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const noteId = btn.dataset.id;
-            if (confirm('このノートを削除しますか？')) {
+            const confirmed = await ask('このノートを削除しますか？', {
+                title: '削除の確認',
+                kind: 'warning',
+                okLabel: '削除',
+                cancelLabel: 'キャンセル'
+            });
+            if (confirmed) {
                 await invoke('delete_note', { noteId });
                 renderNotes();
             }

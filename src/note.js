@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { ask } from '@tauri-apps/plugin-dialog';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
@@ -214,7 +215,13 @@ async function toggleEditorMode() {
 async function deleteNote() {
     if (!noteId) return;
 
-    if (confirm('このノートを削除しますか？')) {
+    const confirmed = await ask('このノートを削除しますか？', {
+        title: '削除の確認',
+        kind: 'warning',
+        okLabel: '削除',
+        cancelLabel: 'キャンセル'
+    });
+    if (confirmed) {
         try {
             await invoke('delete_note', { noteId });
             // Close window after deletion

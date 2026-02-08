@@ -43,6 +43,10 @@ npm run tauri dev
 npm run tauri build
 ```
 
+### インストーラ
+
+`src-tauri\target\release\bundle\msi\Markdown Editor_0.1.0_x64_en-US.msi`
+
 ## 実装済み機能
 
 ### 1. ライブプレビュー

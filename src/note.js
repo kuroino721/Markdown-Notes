@@ -6,6 +6,9 @@ import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
 import { extractTitle, removeExtraListBlankLines } from './utils.js';
 import { setupTableAutoComplete } from './table-utils.js';
+import { listener, listenerCtx } from '@milkdown/plugin-listener';
+import { insertHardbreakCommand } from '@milkdown/preset-commonmark';
+import { callCommand } from '@milkdown/utils';
 import { 
     AUTO_SAVE_DELAY_MS, 
     STORAGE_KEY_LINE_HEIGHT,
@@ -65,6 +68,19 @@ async function initEditor(content) {
             },
         });
         
+        // Configure listener to intercept Enter
+        crepeInstance.editor
+            .config((ctx) => {
+                ctx.get(listenerCtx).keydown = (ctx, event) => {
+                    const { key, shiftKey } = event;
+                    if (key === 'Enter' && !shiftKey) {
+                        ctx.get(callCommand)(insertHardbreakCommand);
+                        return true;
+                    }
+                };
+            })
+            .use(listener);
+
         // Create the editor
         await crepeInstance.create();
         

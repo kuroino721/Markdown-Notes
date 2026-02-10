@@ -4,6 +4,7 @@ import { ask } from '@tauri-apps/plugin-dialog';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
+import { extractTitle, removeExtraListBlankLines } from './utils.js';
 
 // Global editor view reference
 let editorView = null;
@@ -202,16 +203,7 @@ function getEditorContent() {
     if (crepeInstance) {
         try {
             let markdown = crepeInstance.getMarkdown();
-            // Remove extra blank lines between list items (including nested lists)
-            // Repeatedly apply until no more changes (handles all nesting levels)
-            let prev;
-            do {
-                prev = markdown;
-                // Any list item followed by blank lines and another list item
-                markdown = markdown.replace(/^([ \t]*[-*+][ \t].*)(\n\n+)([ \t]*[-*+][ \t])/gm, '$1\n$3');
-                markdown = markdown.replace(/^([ \t]*\d+\.[ \t].*)(\n\n+)([ \t]*[-*+\d])/gm, '$1\n$3');
-            } while (markdown !== prev);
-            return markdown;
+            return removeExtraListBlankLines(markdown);
         } catch (e) {
             console.warn('Failed to get markdown from Crepe:', e);
         }
@@ -268,15 +260,7 @@ async function saveNote() {
         : getEditorContent();
 
     // Extract title from first line
-    const lines = content.split('\n');
-    let title = '新しいノート';
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed) {
-            title = trimmed.replace(/^#+\s*/, '').substring(0, 50);
-            break;
-        }
-    }
+    const title = extractTitle(content);
 
     noteData.content = content;
     noteData.title = title;

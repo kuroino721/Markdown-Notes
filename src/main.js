@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { readTextFile } from '@tauri-apps/plugin-fs';
 import { ask } from '@tauri-apps/plugin-dialog';
+import { escapeHtml, getPreviewText, getFileNameFromPath } from './utils.js';
 
 // Render notes grid
 async function renderNotes() {
@@ -32,11 +33,7 @@ async function renderNotes() {
         });
 
         // Get preview text (first 100 chars, strip markdown)
-        const preview = note.content
-            .replace(/^#+\s*/gm, '')
-            .replace(/\*\*|__|\*|_|`/g, '')
-            .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-            .substring(0, 100);
+        const preview = getPreviewText(note.content);
 
         return `
             <div class="note-card" data-id="${note.id}" data-color="${note.color}">
@@ -75,12 +72,7 @@ async function renderNotes() {
     });
 }
 
-// Escape HTML
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
+// escapeHtml is imported from utils.js
 
 // Open note window using JavaScript Tauri API
 async function openNoteWindow(noteId) {
@@ -136,7 +128,7 @@ async function handleFileOpen(filePath) {
         const note = await invoke('create_note');
         
         // Update the note with the file content
-        const fileName = filePath.split(/[/\\]/).pop().replace(/\.[^.]+$/, '');
+        const fileName = getFileNameFromPath(filePath);
         note.content = content;
         note.title = fileName;
         

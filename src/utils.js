@@ -75,3 +75,42 @@ export function removeExtraListBlankLines(markdown) {
 export function getFileNameFromPath(filePath) {
     return filePath.split(/[/\\]/).pop().replace(/\.[^.]+$/, '');
 }
+
+/**
+ * Find table context from ancestor node information.
+ * Traverses from deepest to shallowest to find table and table_row nodes.
+ * @param {Array<{typeName: string, node: any}>} ancestors - Ancestor nodes from deepest to shallowest
+ * @returns {{inTable: boolean, tableNode: any|null, tableRowNode: any|null}}
+ */
+export function findTableContext(ancestors) {
+    let tableNode = null;
+    let tableRowNode = null;
+    for (const { typeName, node } of ancestors) {
+        if (typeName === 'table_row' && !tableRowNode) {
+            tableRowNode = node;
+        }
+        if (typeName === 'table') {
+            tableNode = node;
+            break;
+        }
+    }
+    return { inTable: !!tableNode, tableNode, tableRowNode };
+}
+
+/**
+ * Check if a table row can be deleted.
+ * Rules:
+ *   - Header row (first child of table) cannot be deleted
+ *   - Table must have more than 2 rows (header + at least 2 data rows)
+ * @param {object} tableNode - Object with childCount and child(index) method
+ * @param {any} tableRowNode - The row node reference to check
+ * @returns {boolean} Whether the row can be deleted
+ */
+export function canDeleteTableRow(tableNode, tableRowNode) {
+    if (!tableNode || !tableRowNode) return false;
+    // Header row (first row) cannot be deleted
+    if (tableRowNode === tableNode.child(0)) return false;
+    // Need at least header + 2 data rows to allow deletion
+    if (tableNode.childCount <= 2) return false;
+    return true;
+}

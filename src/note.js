@@ -4,7 +4,7 @@ import { ask } from '@tauri-apps/plugin-dialog';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
-import { extractTitle, removeExtraListBlankLines } from './utils.js';
+import { extractTitle, removeExtraListBlankLines, findTableContext, canDeleteTableRow } from './utils.js';
 
 // Global editor view reference
 let editorView = null;
@@ -21,29 +21,16 @@ function setupTableAutoComplete(editorElement) {
         const { state } = editorView;
         const { $from } = state.selection;
 
-        // テーブルセル内にいるかノード構造で確認
-        let inTable = false;
-        let tableNode = null;
-        let tableRowNode = null;
+        // 祖先ノード情報を収集
+        const ancestors = [];
         for (let depth = $from.depth; depth > 0; depth--) {
             const node = $from.node(depth);
-            if (node.type.name === 'table_row' && !tableRowNode) {
-                tableRowNode = node;
-            }
-            if (node.type.name === 'table') {
-                inTable = true;
-                tableNode = node;
-                break;
-            }
+            ancestors.push({ typeName: node.type.name, node });
         }
-        if (!inTable || !tableNode) return;
 
-        // ヘッダー行（最初の行）は削除しない
-        const firstRow = tableNode.child(0);
-        if (tableRowNode === firstRow) return;
-
-        // テーブルが2行以下なら削除しない（ヘッダー+1行は最低限必要）
-        if (tableNode.childCount <= 2) return;
+        const { inTable, tableNode, tableRowNode } = findTableContext(ancestors);
+        if (!inTable) return;
+        if (!canDeleteTableRow(tableNode, tableRowNode)) return;
 
         event.preventDefault();
         event.stopPropagation();
@@ -64,18 +51,18 @@ function setupTableAutoComplete(editorElement) {
         // Ctrl+Enter: テーブル内で行追加
         if (event.ctrlKey || event.metaKey) {
             if (!editorView || !crepeInstance) return;
-            // テーブル内かを同期的にチェック
+
             const { state } = editorView;
             const { $from } = state.selection;
-            // テーブルセル内にいるかノード構造で確認
-            let inTable = false;
+
+            // 祖先ノード情報を収集
+            const ancestors = [];
             for (let depth = $from.depth; depth > 0; depth--) {
-                const nodeType = $from.node(depth).type.name;
-                if (nodeType === 'table') {
-                    inTable = true;
-                    break;
-                }
+                const node = $from.node(depth);
+                ancestors.push({ typeName: node.type.name, node });
             }
+
+            const { inTable } = findTableContext(ancestors);
             if (!inTable) return;
 
             event.preventDefault();

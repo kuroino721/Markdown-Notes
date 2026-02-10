@@ -5,6 +5,8 @@ import {
     getPreviewText,
     removeExtraListBlankLines,
     getFileNameFromPath,
+    findTableContext,
+    canDeleteTableRow,
 } from './utils.js';
 
 // ── escapeHtml ─────────────────────────────────────────
@@ -200,5 +202,137 @@ describe('getFileNameFromPath', () => {
 
     it('extracts Japanese filename', () => {
         expect(getFileNameFromPath('C:\\ドキュメント\\メモ.md')).toBe('メモ');
+    });
+});
+
+// ── findTableContext ──────────────────────────────────
+
+describe('findTableContext', () => {
+    it('detects table context from ancestors', () => {
+        const tableNode = { id: 'table' };
+        const rowNode = { id: 'row' };
+        const ancestors = [
+            { typeName: 'table_cell', node: { id: 'cell' } },
+            { typeName: 'table_row', node: rowNode },
+            { typeName: 'table', node: tableNode },
+        ];
+        const result = findTableContext(ancestors);
+        expect(result.inTable).toBe(true);
+        expect(result.tableNode).toBe(tableNode);
+        expect(result.tableRowNode).toBe(rowNode);
+    });
+
+    it('returns not in table when no table ancestor', () => {
+        const ancestors = [
+            { typeName: 'paragraph', node: { id: 'p' } },
+            { typeName: 'doc', node: { id: 'doc' } },
+        ];
+        const result = findTableContext(ancestors);
+        expect(result.inTable).toBe(false);
+        expect(result.tableNode).toBeNull();
+        expect(result.tableRowNode).toBeNull();
+    });
+
+    it('handles empty ancestors array', () => {
+        const result = findTableContext([]);
+        expect(result.inTable).toBe(false);
+        expect(result.tableNode).toBeNull();
+        expect(result.tableRowNode).toBeNull();
+    });
+
+    it('finds first table_row encountered (deepest)', () => {
+        const innerRow = { id: 'inner_row' };
+        const outerRow = { id: 'outer_row' };
+        const ancestors = [
+            { typeName: 'table_cell', node: { id: 'cell' } },
+            { typeName: 'table_row', node: innerRow },
+            { typeName: 'table_row', node: outerRow },
+            { typeName: 'table', node: { id: 'table' } },
+        ];
+        const result = findTableContext(ancestors);
+        expect(result.tableRowNode).toBe(innerRow);
+    });
+
+    it('stops at first table node', () => {
+        const innerTable = { id: 'inner_table' };
+        const ancestors = [
+            { typeName: 'table_cell', node: { id: 'cell' } },
+            { typeName: 'table_row', node: { id: 'row' } },
+            { typeName: 'table', node: innerTable },
+            { typeName: 'table', node: { id: 'outer_table' } },
+        ];
+        const result = findTableContext(ancestors);
+        expect(result.tableNode).toBe(innerTable);
+    });
+
+    it('handles table without table_row (edge case)', () => {
+        const ancestors = [
+            { typeName: 'table_cell', node: { id: 'cell' } },
+            { typeName: 'table', node: { id: 'table' } },
+        ];
+        const result = findTableContext(ancestors);
+        expect(result.inTable).toBe(true);
+        expect(result.tableRowNode).toBeNull();
+    });
+});
+
+// ── canDeleteTableRow ─────────────────────────────────
+
+describe('canDeleteTableRow', () => {
+    // Helper to create a mock table node
+    function makeTable(rows) {
+        return {
+            childCount: rows.length,
+            child: (i) => rows[i],
+        };
+    }
+
+    it('allows deleting a non-header row when table has 3+ rows', () => {
+        const headerRow = { id: 'header' };
+        const dataRow1 = { id: 'data1' };
+        const dataRow2 = { id: 'data2' };
+        const table = makeTable([headerRow, dataRow1, dataRow2]);
+        expect(canDeleteTableRow(table, dataRow1)).toBe(true);
+        expect(canDeleteTableRow(table, dataRow2)).toBe(true);
+    });
+
+    it('prevents deleting header row (first row)', () => {
+        const headerRow = { id: 'header' };
+        const dataRow1 = { id: 'data1' };
+        const dataRow2 = { id: 'data2' };
+        const table = makeTable([headerRow, dataRow1, dataRow2]);
+        expect(canDeleteTableRow(table, headerRow)).toBe(false);
+    });
+
+    it('prevents deleting when table has only 2 rows', () => {
+        const headerRow = { id: 'header' };
+        const dataRow = { id: 'data' };
+        const table = makeTable([headerRow, dataRow]);
+        expect(canDeleteTableRow(table, dataRow)).toBe(false);
+    });
+
+    it('prevents deleting when table has only 1 row', () => {
+        const headerRow = { id: 'header' };
+        const table = makeTable([headerRow]);
+        expect(canDeleteTableRow(table, headerRow)).toBe(false);
+    });
+
+    it('returns false when tableNode is null', () => {
+        expect(canDeleteTableRow(null, { id: 'row' })).toBe(false);
+    });
+
+    it('returns false when tableRowNode is null', () => {
+        const table = makeTable([{ id: 'header' }, { id: 'data' }]);
+        expect(canDeleteTableRow(table, null)).toBe(false);
+    });
+
+    it('returns false when both are null', () => {
+        expect(canDeleteTableRow(null, null)).toBe(false);
+    });
+
+    it('allows deleting last data row when table has 4 rows', () => {
+        const rows = [{ id: 'h' }, { id: 'd1' }, { id: 'd2' }, { id: 'd3' }];
+        const table = makeTable(rows);
+        expect(canDeleteTableRow(table, rows[3])).toBe(true);
     });
 });

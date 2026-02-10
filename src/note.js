@@ -33,7 +33,7 @@ function setupTableAutoComplete(editorElement) {
         if (!canDeleteTableRow(tableNode, tableRowNode)) return;
 
         event.preventDefault();
-        event.stopPropagation();
+        event.stopImmediatePropagation();
 
         import('@milkdown/prose/tables').then(({ deleteRow }) => {
             deleteRow(editorView.state, editorView.dispatch);
@@ -66,7 +66,7 @@ function setupTableAutoComplete(editorElement) {
             if (!inTable) return;
 
             event.preventDefault();
-            event.stopPropagation();
+            event.stopImmediatePropagation();
 
             try {
                 const { commandsCtx } = await import('@milkdown/core');

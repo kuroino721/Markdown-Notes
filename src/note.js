@@ -217,7 +217,6 @@ async function initEditor(content) {
             root: editorEl,
             defaultValue: content || '',
             features: {
-                [CrepeFeature.CodeMirror]: false,  // Disable CodeMirror for simplicity
                 [CrepeFeature.Latex]: false,  // Disable LaTeX for simplicity
             },
         });

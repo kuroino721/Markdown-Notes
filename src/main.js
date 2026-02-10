@@ -3,6 +3,14 @@ import { listen } from '@tauri-apps/api/event';
 import { readTextFile } from '@tauri-apps/plugin-fs';
 import { ask } from '@tauri-apps/plugin-dialog';
 import { escapeHtml, getPreviewText, getFileNameFromPath } from './utils.js';
+import { 
+    DEFAULT_WINDOW_WIDTH, 
+    DEFAULT_WINDOW_HEIGHT, 
+    DEFAULT_WINDOW_X, 
+    DEFAULT_WINDOW_Y,
+    EVENT_OPEN_FILE,
+    EVENT_TAURI_ERROR
+} from './constants.js';
 
 // Render notes grid
 async function renderNotes() {
@@ -90,15 +98,15 @@ async function openNoteWindow(noteId) {
         const webview = new WebviewWindow(noteId, {
             url: `note.html?id=${noteId}`,
             title: 'ノート',
-            width: 300,
-            height: 400,
-            x: 100,
-            y: 100,
+            width: DEFAULT_WINDOW_WIDTH,
+            height: DEFAULT_WINDOW_HEIGHT,
+            x: DEFAULT_WINDOW_X,
+            y: DEFAULT_WINDOW_Y,
             decorations: true,
             resizable: true,
         });
         
-        webview.once('tauri://error', (e) => {
+        webview.once(EVENT_TAURI_ERROR, (e) => {
             console.error('Window error:', e);
         });
     } catch (error) {
@@ -147,7 +155,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn-new').addEventListener('click', createNewNote);
 
     // Listen for file open events
-    listen('open-file', async (event) => {
+    listen(EVENT_OPEN_FILE, async (event) => {
         const filePath = event.payload;
         if (filePath) {
             await handleFileOpen(filePath);

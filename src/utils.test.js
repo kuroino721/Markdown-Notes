@@ -7,6 +7,9 @@ import {
     getFileNameFromPath,
     findTableContext,
     canDeleteTableRow,
+    DEFAULT_TITLE,
+    MAX_TITLE_LENGTH,
+    MAX_PREVIEW_LENGTH,
 } from './utils.js';
 
 // ── escapeHtml ─────────────────────────────────────────
@@ -66,22 +69,22 @@ describe('extractTitle', () => {
         expect(extractTitle('\n\n  \nActual Title')).toBe('Actual Title');
     });
 
-    it('truncates to 50 characters', () => {
-        const longTitle = 'A'.repeat(100);
-        expect(extractTitle(longTitle).length).toBe(50);
+    it('truncates to MAX_TITLE_LENGTH characters', () => {
+        const longTitle = 'A'.repeat(MAX_TITLE_LENGTH * 2);
+        expect(extractTitle(longTitle).length).toBe(MAX_TITLE_LENGTH);
     });
 
     it('returns default for empty content', () => {
-        expect(extractTitle('')).toBe('新しいノート');
+        expect(extractTitle('')).toBe(DEFAULT_TITLE);
     });
 
     it('returns default for null/undefined', () => {
-        expect(extractTitle(null)).toBe('新しいノート');
-        expect(extractTitle(undefined)).toBe('新しいノート');
+        expect(extractTitle(null)).toBe(DEFAULT_TITLE);
+        expect(extractTitle(undefined)).toBe(DEFAULT_TITLE);
     });
 
     it('returns default for whitespace-only content', () => {
-        expect(extractTitle('   \n   \n   ')).toBe('新しいノート');
+        expect(extractTitle('   \n   \n   ')).toBe(DEFAULT_TITLE);
     });
 });
 
@@ -108,9 +111,9 @@ describe('getPreviewText', () => {
         expect(getPreviewText('[click here](http://example.com)')).toBe('click here');
     });
 
-    it('truncates to 100 characters', () => {
-        const longContent = 'A'.repeat(200);
-        expect(getPreviewText(longContent).length).toBe(100);
+    it('truncates to MAX_PREVIEW_LENGTH characters', () => {
+        const longContent = 'A'.repeat(MAX_PREVIEW_LENGTH * 2);
+        expect(getPreviewText(longContent).length).toBe(MAX_PREVIEW_LENGTH);
     });
 
     it('handles empty content', () => {

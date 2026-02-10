@@ -3,6 +3,10 @@
  * Pure functions extracted for testability
  */
 
+export const DEFAULT_TITLE = '新しいノート';
+export const MAX_TITLE_LENGTH = 50;
+export const MAX_PREVIEW_LENGTH = 100;
+
 /**
  * Escape HTML special characters to prevent XSS
  * @param {string} text - Raw text to escape
@@ -30,10 +34,10 @@ export function extractTitle(content) {
     for (const line of lines) {
         const trimmed = line.trim();
         if (trimmed) {
-            return trimmed.replace(/^#+\s*/, '').substring(0, 50);
+            return trimmed.replace(/^#+\s*/, '').substring(0, MAX_TITLE_LENGTH);
         }
     }
-    return '新しいノート';
+    return DEFAULT_TITLE;
 }
 
 /**
@@ -47,7 +51,8 @@ export function getPreviewText(content) {
         .replace(/^#+\s*/gm, '')
         .replace(/\*\*|__|[*_`]/g, '')
         .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        .substring(0, 100);
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+        .substring(0, MAX_PREVIEW_LENGTH);
 }
 
 /**
@@ -60,7 +65,15 @@ export function removeExtraListBlankLines(markdown) {
     let prev;
     do {
         prev = markdown;
+        // Regex explanation:
+        // Group 1: Matches a list item (bullet or ordered) and its content.
+        // Group 2: Matches 2 or more newlines (the extra blank lines).
+        // Group 3: Matches the start of the next list item.
+        // Replacement: Keeps the first item ($1), adds a single newline (\n), and keeps the start of the next item ($3).
+
+        // Handle unordered lists (-, *, +)
         markdown = markdown.replace(/^([ \t]*[-*+][ \t].*)(\n\n+)([ \t]*[-*+][ \t])/gm, '$1\n$3');
+        // Handle ordered lists (1., 2., etc.) and mixed list types
         markdown = markdown.replace(/^([ \t]*\d+\.[ \t].*)(\n\n+)([ \t]*[-*+\d])/gm, '$1\n$3');
     } while (markdown !== prev);
     return markdown;

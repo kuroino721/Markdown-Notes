@@ -9,8 +9,53 @@ import { extractTitle, removeExtraListBlankLines } from './utils.js';
 // Global editor view reference
 let editorView = null;
 
-// Table autocomplete handler
+// Table keyboard shortcut handlers
 function setupTableAutoComplete(editorElement) {
+    // Ctrl+Backspace: テーブル内で行削除
+    editorElement.addEventListener('keydown', (event) => {
+        if (event.key !== 'Backspace' || !(event.ctrlKey || event.metaKey)) {
+            return;
+        }
+        if (!editorView || !crepeInstance) return;
+
+        const { state } = editorView;
+        const { $from } = state.selection;
+
+        // テーブルセル内にいるかノード構造で確認
+        let inTable = false;
+        let tableNode = null;
+        let tableRowNode = null;
+        for (let depth = $from.depth; depth > 0; depth--) {
+            const node = $from.node(depth);
+            if (node.type.name === 'table_row' && !tableRowNode) {
+                tableRowNode = node;
+            }
+            if (node.type.name === 'table') {
+                inTable = true;
+                tableNode = node;
+                break;
+            }
+        }
+        if (!inTable || !tableNode) return;
+
+        // ヘッダー行（最初の行）は削除しない
+        const firstRow = tableNode.child(0);
+        if (tableRowNode === firstRow) return;
+
+        // テーブルが2行以下なら削除しない（ヘッダー+1行は最低限必要）
+        if (tableNode.childCount <= 2) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        import('@milkdown/prose/tables').then(({ deleteRow }) => {
+            deleteRow(editorView.state, editorView.dispatch);
+        }).catch(err => {
+            console.error('Failed to delete table row:', err);
+        });
+    }, true);
+
+    // Enter系: テーブル自動補完 & Ctrl+Enter行追加
     editorElement.addEventListener('keydown', async (event) => {
         if (event.key !== 'Enter' || event.shiftKey) {
             return;

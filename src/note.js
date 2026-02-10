@@ -12,7 +12,40 @@ let editorView = null;
 // Table autocomplete handler
 function setupTableAutoComplete(editorElement) {
     editorElement.addEventListener('keydown', async (event) => {
-        if (event.key !== 'Enter' || event.shiftKey || event.ctrlKey || event.metaKey) {
+        if (event.key !== 'Enter' || event.shiftKey) {
+            return;
+        }
+
+        // Ctrl+Enter: テーブル内で行追加
+        if (event.ctrlKey || event.metaKey) {
+            if (!editorView || !crepeInstance) return;
+            // テーブル内かを同期的にチェック
+            const { state } = editorView;
+            const { $from } = state.selection;
+            // テーブルセル内にいるかノード構造で確認
+            let inTable = false;
+            for (let depth = $from.depth; depth > 0; depth--) {
+                const nodeType = $from.node(depth).type.name;
+                if (nodeType === 'table') {
+                    inTable = true;
+                    break;
+                }
+            }
+            if (!inTable) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            try {
+                const { commandsCtx } = await import('@milkdown/core');
+                const { addRowAfterCommand } = await import('@milkdown/preset-gfm');
+                crepeInstance.editor.action((ctx) => {
+                    const commands = ctx.get(commandsCtx);
+                    commands.call(addRowAfterCommand.key);
+                });
+            } catch (e) {
+                console.error('Failed to add table row:', e);
+            }
             return;
         }
         

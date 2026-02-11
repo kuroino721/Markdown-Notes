@@ -67,15 +67,17 @@ export const GoogleDriveService = {
                     });
                     
                     if (pendingToken) {
+                        console.log('[DEBUG] GoogleDriveService: Applying pending token from redirect');
                         gapi.client.setToken({ access_token: pendingToken });
                         pendingToken = null;
                         localStorage.setItem('markdown_editor_gdrive_enabled', 'true');
                     }
                     
                     gapiInited = true;
+                    console.log('[DEBUG] GoogleDriveService: GAPI inited');
                     checkInit();
                 } catch (e) {
-                    console.error('GAPI init failed:', e);
+                    console.error('[DEBUG] GoogleDriveService: GAPI init failed:', e);
                 }
             };
 
@@ -141,9 +143,10 @@ export const GoogleDriveService = {
 
         // Use Redirect Flow for Tauri to avoid popup blocking
         if (isTauri() && !silent) {
-            console.log('Using Redirect Flow for Tauri');
+            console.log('[DEBUG] GoogleDriveService: Using Redirect Flow for Tauri');
             const redirectUri = window.location.origin + '/';
             const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(SCOPES)}&prompt=select_account`;
+            console.log('[DEBUG] GoogleDriveService: Redirecting to:', authUrl);
             window.location.assign(authUrl);
             return new Promise(() => {}); // Page will navigate
         }
@@ -190,12 +193,14 @@ export const GoogleDriveService = {
      * Find the sync file on Google Drive
      */
     async findSyncFile() {
+        console.log('[DEBUG] GoogleDriveService: findSyncFile() called');
         const response = await gapi.client.drive.files.list({
             q: `name = '${SYNC_FILE_NAME}' and trashed = false`,
             fields: 'files(id, name)',
             spaces: 'drive',
         });
         const files = response.result.files;
+        console.log(`[DEBUG] GoogleDriveService: findSyncFile() found ${files ? files.length : 0} files`);
         return files && files.length > 0 ? files[0] : null;
     },
 
@@ -219,10 +224,12 @@ export const GoogleDriveService = {
      * Read content from the sync file
      */
     async readSyncFile(fileId) {
+        console.log(`[DEBUG] GoogleDriveService: readSyncFile(${fileId})`);
         const response = await gapi.client.drive.files.get({
             fileId: fileId,
             alt: 'media',
         });
+        console.log('[DEBUG] GoogleDriveService: readSyncFile() success');
         return response.result;
     },
 
@@ -230,6 +237,7 @@ export const GoogleDriveService = {
      * Create or update the sync file on Google Drive
      */
     async saveToDrive(content) {
+        console.log('[DEBUG] GoogleDriveService: saveToDrive()');
         const file = await this.findSyncFile();
         const metadata = {
             name: SYNC_FILE_NAME,
@@ -237,6 +245,7 @@ export const GoogleDriveService = {
         };
 
         if (file) {
+            console.log(`[DEBUG] GoogleDriveService: Updating existing file ${file.id}`);
             // Update existing file
             return await gapi.client.request({
                 path: `/upload/drive/v3/files/${file.id}`,
@@ -245,12 +254,14 @@ export const GoogleDriveService = {
                 body: JSON.stringify(content),
             });
         } else {
+            console.log('[DEBUG] GoogleDriveService: Creating new sync file');
             // Create new file
             // First create metadata, then upload content
             const createResp = await gapi.client.drive.files.create({
                 resource: metadata,
                 fields: 'id',
             });
+            console.log(`[DEBUG] GoogleDriveService: New file metadata created with ID ${createResp.result.id}`);
             return await gapi.client.request({
                 path: `/upload/drive/v3/files/${createResp.result.id}`,
                 method: 'PATCH',

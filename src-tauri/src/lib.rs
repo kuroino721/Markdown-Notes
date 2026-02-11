@@ -6,6 +6,7 @@ use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 #[tauri::command]
 fn create_note(app: tauri::AppHandle) -> Result<Note, String> {
+    log::info!("Command: create_note called");
     let mut store = NotesStore::load(&app);
     let note = Note::new();
     store.add_note(note.clone());
@@ -28,18 +29,21 @@ fn create_note(app: tauri::AppHandle) -> Result<Note, String> {
 
 #[tauri::command]
 fn get_all_notes(app: tauri::AppHandle) -> Vec<Note> {
+    log::info!("Command: get_all_notes called");
     let store = NotesStore::load(&app);
     store.notes
 }
 
 #[tauri::command]
 fn get_note(app: tauri::AppHandle, note_id: String) -> Option<Note> {
+    log::info!("Command: get_note called for id: {}", note_id);
     let store = NotesStore::load(&app);
     store.get_note(&note_id).cloned()
 }
 
 #[tauri::command]
 fn save_note(app: tauri::AppHandle, note: Note) -> Result<(), String> {
+    log::info!("Command: save_note called for id: {}", note.id);
     let mut store = NotesStore::load(&app);
     store.update_note(note);
     store.save(&app)
@@ -47,6 +51,7 @@ fn save_note(app: tauri::AppHandle, note: Note) -> Result<(), String> {
 
 #[tauri::command]
 fn delete_note(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
+    log::info!("Command: delete_note called for id: {}", note_id);
     let mut store = NotesStore::load(&app);
     store.delete_note(&note_id);
     store.save(&app)?;
@@ -61,6 +66,10 @@ fn delete_note(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
 
 #[tauri::command]
 fn save_all_notes(app: tauri::AppHandle, notes: Vec<Note>) -> Result<(), String> {
+    log::info!(
+        "Command: save_all_notes called (bulk save of {} notes)",
+        notes.len()
+    );
     let mut store = NotesStore::load(&app);
     store.notes = notes;
     store.save(&app)
@@ -75,6 +84,7 @@ fn update_window_state(
     width: u32,
     height: u32,
 ) -> Result<(), String> {
+    log::info!("Command: update_window_state called for id: {}", note_id);
     let mut store = NotesStore::load(&app);
     if let Some(note) = store.notes.iter_mut().find(|n| n.id == note_id) {
         note.window_state.x = x;

@@ -141,6 +141,7 @@ async function handleFileOpen(filePath) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('[DEBUG] main.js: DOMContentLoaded');
     adapter = await getAdapter();
     
     await renderNotes();
@@ -156,6 +157,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Listen for file open events
     adapter.onFileOpen(async (filePath) => {
+        console.log('[DEBUG] main.js: onFileOpen event received:', filePath);
         if (filePath) {
             await handleFileOpen(filePath);
         }
@@ -207,9 +209,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     async function triggerSync() {
+        console.log('[DEBUG] main.js: triggerSync() called');
         const adapter = await getAdapter();
         if (adapter.syncWithDrive) {
-            adapter.syncWithDrive().catch(console.error);
+            adapter.syncWithDrive().catch(err => {
+                console.error('[DEBUG] main.js: Sync trigger failed:', err);
+            });
         }
     }
 
@@ -344,6 +349,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Refresh notes when window gains focus
     window.addEventListener('focus', () => {
+        console.log('[DEBUG] main.js: Window focused, rendering notes');
         renderNotes();
     });
 });

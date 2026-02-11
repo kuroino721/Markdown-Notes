@@ -1,65 +1,85 @@
 ---
 name: Tauri Google OAuth
-description: Tauri (WebView2) における Google OAuth のポップアップ制限を回避し、クロスプラットフォーム同期を安定させるためのベストプラクティス。
+description: Tauri における Google OAuth の「Desktop App」クライアントタイプ利用、PKCE フロー、および Windows での URL 切断問題を回避するベストプラクティス。
 ---
 
 # Tauri Google OAuth 実装ガイド
 
-Tauri デスクトップアプリ（特に Windows WebView2）で Google OAuth を実装する際、ポップアップウィンドウがブロックされたり、正常に動作しないことがよくあります。このスキルは、それらの制限を回避し、ブラウザ版とのクロスプラットフォーム同期を安定させるための手法をまとめます。
+Tauri デスクトップアプリで Google OAuth を実装する際、WebView の制限や OS ごとのシェルの挙動により、多くの落とし穴があります。このスキルは、それらを回避し安定した認証を実現するための最新の手法をまとめます。
 
-## 1. ポップアップではなく「リダイレクト方式」を採用する
+## 1. クライアントタイプとフローの選択
 
-Tauri の WebView 内では Google のポップアップ SDK (`google.accounts.oauth2.initTokenClient`) が正常に動作しない、あるいは物理的にブロックされることが多いです。
+デスクトップアプリ（Tauri）では、従来の「ウェブ アプリケーション」タイプや「インプリシットフロー（token）」は `invalid_request` (Error 400) の原因となります。
 
-### 解決策
-アプリ全体を Google のログインページへ一度遷移させ、認証後にアプリへ戻ってくる「リダイレクト方式」を導入します。
+- **クライアントタイプ**: **「デスクトップ アプリ (Desktop App)」** を使用します。
+- **認可フロー**: **「認可コードフロー (Authorization Code Flow) + PKCE」** を採用します。
+- **リダイレクト URI**: `http://localhost:51737/` などのループバックアドレスを使用します（`tauri.localhost` は Google によって禁止されています）。
 
-- **OAuth URL の構築**: 手動で `https://accounts.google.com/o/oauth2/v2/auth` を構築します。
-- **Redirect URI**: 使用しているオリジン（例: `http://localhost:1420/`）を指定します。
-- **Response Type**: クライアントサイドのみで完結させる場合は `token` (Implicit Flow) を使用します。
+## 2. Windows での URL 切断問題 (重要)
 
-```javascript
-const redirectUri = window.location.origin + '/';
-const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(SCOPES)}&prompt=select_account`;
-window.location.assign(authUrl);
+Tauri (Rust) からシステムブラウザを起動する際、Windows の標準的な `cmd /C start <URL>` 実行では、URL に含まれる `&` 記号がコマンド区切りとして解釈され、URL が途中で途切れる（`response_type` 等のパラメータが消失する）問題が発生します。
+
+### 解決策: `opener` クレートの使用
+シェルを介さず OS API を直接呼ぶことで、特殊文字を含む長い URL を安全にブラウザへ渡せます。
+
+**Rust (Cargo.toml)**
+```toml
+opener = "0.7"
 ```
 
-## 2. 認証後のトークン処理 (Hash Fragment)
-
-リダイレクト後にアプリに戻ってきた際、URL の `hash` 部分にアクセス・トークンが含まれます。これを起動時に解析して取得します。
-
-- **取得と清掃**: トークンを取得したら、セキュリティと見た目のため `history.replaceState` で URL を綺麗にします。
-- **初期化順序**: Google SDK (`gapi`) が初期化される前にトークンを検出し、初期化後に `gapi.client.setToken` でセットする必要があります。
-
-## 3. クロスプラットフォーム・データの互換性 (Schema)
-
-ブラウザ版とデスクトップ版で同期を行う場合、デスクトップ版のみで必要なフィールド（例: `window_state`）が欠落することがあります。
-
-### 解決策: Rust Backend (Serde)
-Rust 側の構造体で `#[serde(default)]` を使用し、欠落しているフィールドをデフォルト値で補完します。これにより、ブラウザ版から来た不完全な JSON でもエラーにならずに読み込めます。
-
+**Rust (lib.rs / auth.rs)**
 ```rust
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Note {
-    pub id: String,
-    // ...
-    #[serde(default)] // フィールドがない場合は Default::default() が使われる
-    pub window_state: WindowState,
-    #[serde(default = "default_color")]
-    pub color: String,
+#[tauri::command]
+pub fn open_external_url(url: String) -> Result<(), String> {
+    opener::open_browser(&url).map_err(|e| e.to_string())
 }
 ```
 
-## 4. UI の応答性 (Non-blocking Async)
+## 3. PKCE (Proof Key for Code Exchange) の実装
 
-起動時に Google API などの重い同期処理を行う際、単純に `await` してしまうと UI のイベントハンドラ（ボタンクリックなど）の登録が遅れ、ボタンが反応しなくなることがあります。
+フロントエンドで `code_challenge` と `code_verifier` を生成し、認可コードとアクセストークンの交換時の安全性を確保します。
 
-- **解決策**: 起動時の初期化処理は非同期（IIFE など）で実行し、UI のメインスレッドをブロックしないようにします。
+```typescript
+async generatePKCE() {
+    const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+    const encoder = new TextEncoder();
+    const data = encoder.encode(verifier);
+    const hash = await crypto.subtle.digest('SHA-256', data);
+    const challenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return { verifier, challenge };
+}
+```
 
-## 5. Google Cloud Console の厳密な設定
+## 4. マルチ環境（Web/Desktop）での認証情報の出し分け
 
-- **Redirect URI**: 末尾の `/` (スラッシュ) の有無まで完全一致させる必要があります。例: `http://localhost:1420/` を必ず登録します。
+ブラウザ版とデスクトップ版で異なるクライアント ID を使用する場合、環境を動的に検出し使い分けます。
 
-## 6. 環境検出の安定化
+```typescript
+const isTauri = () => !!(window.__TAURI_INTERNALS__ || window.__TAURI__);
+const getClientId = () => isTauri() ? VITE_CLIENT_ID_DESKTOP : VITE_CLIENT_ID_WEB;
 
-`window.__TAURI__` の有無だけでなく、アダプターや専用のグローバルフラグ（`window.IS_TAURI_ADAPTER = true`）を併用することで、環境検出の失敗による誤った認証フローの選択を防ぎます。
+// signIn 関数内
+if (isTauri()) {
+    // 認可コードフロー + PKCE
+} else {
+    // インプリシットフロー (GIS SDK 等)
+}
+```
+
+## 5. ループバックサーバーの簡略化
+
+認可コードフローでは、Rust 側のサーバーはクエリパラメータから `code` を抽出するだけで済みます。
+
+```rust
+if url.contains("code=") {
+    // URLSearchParams 的な処理で code を抽出し、フロントエンドへ返す
+}
+```
+
+## 6. チェックリスト
+- [ ] Google Cloud Console で「デスクトップ アプリ」として ID を作成したか？
+- [ ] `http://localhost:<PORT>/` が承認済みリダイレクト先として登録されているか？
+- [ ] Windows で URL が `&` の位置で途切れていないか（`opener` を使っているか）？
+- [ ] PKCE の `code_challenge` と `code_verifier` が正しく交換に利用されているか？

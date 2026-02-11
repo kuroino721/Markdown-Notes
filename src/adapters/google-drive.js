@@ -88,7 +88,7 @@ export const GoogleDriveService = {
     /**
      * Sign in to Google
      */
-    async signIn(silent = false) {
+    async signIn(silent = false, loginHint = null) {
         if (!gisInited || !tokenClient) {
             console.log('GIS not inited, attempting to re-init...');
             await this.init();
@@ -109,14 +109,15 @@ export const GoogleDriveService = {
                 resolve(resp);
             };
 
+            const options = {};
             if (silent) {
-                // Try to get token without showing any popup
-                // If it fails, it will call the callback with an error, but no popup will appear
-                tokenClient.requestAccessToken({ prompt: 'none' });
+                options.prompt = 'none';
+                if (loginHint) options.login_hint = loginHint;
             } else {
-                // For manual sign-in, show the account picker
-                tokenClient.requestAccessToken({ prompt: 'select_account' });
+                options.prompt = 'select_account';
             }
+            
+            tokenClient.requestAccessToken(options);
         });
     },
 

@@ -18,8 +18,9 @@ export const BrowserAdapter = {
         await GoogleDriveService.init();
         if (GoogleDriveService.hasPreviousSession()) {
             try {
-                // Try silent sign-in without popup
-                await GoogleDriveService.signIn(true);
+                const lastUser = localStorage.getItem('markdown_editor_last_synced_user');
+                // Try silent sign-in without popup, using login_hint for better success rate
+                await GoogleDriveService.signIn(true, lastUser);
                 await this.syncWithDrive();
             } catch (e) {
                 console.log('Silent auto-sync not possible:', e);

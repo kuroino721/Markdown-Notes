@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (adapter.initSync) {
         try {
             await adapter.initSync();
-            updateSyncStatus();
+            await updateSyncStatus();
         } catch (e) {
             console.error('Failed to init sync:', e);
         }

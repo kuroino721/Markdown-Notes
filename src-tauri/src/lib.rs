@@ -79,33 +79,64 @@ fn update_window_state(
 }
 
 #[tauri::command]
-fn open_note_window(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
+async fn open_note_window(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
+    log::info!("Starting open_note_window for id: {}", note_id);
+
     // Check if window already exists
     if app.get_webview_window(&note_id).is_some() {
+        log::info!("Window {} already exists", note_id);
         return Ok(());
     }
 
-    let store = NotesStore::load(&app);
-    if let Some(note) = store.get_note(&note_id) {
-        let url = WebviewUrl::App(format!("note.html?id={}", note_id).into());
-        WebviewWindowBuilder::new(&app, &note_id, url)
-            .title(&note.title)
-            .inner_size(
-                note.window_state.width as f64,
-                note.window_state.height as f64,
+    // Retrieve note data and drop store immediately to avoid deadlock during window creation
+    let (title, width, height, x, y) = {
+        let store = NotesStore::load(&app);
+        if let Some(note) = store.get_note(&note_id) {
+            (
+                note.title.clone(),
+                note.window_state.width,
+                note.window_state.height,
+                note.window_state.x,
+                note.window_state.y,
             )
-            .position(note.window_state.x as f64, note.window_state.y as f64)
-            .decorations(true)
-            .resizable(true)
-            .build()
-            .map_err(|e| e.to_string())?;
+        } else {
+            log::warn!("Note not found: {}", note_id);
+            return Ok(());
+        }
+    };
 
-        // Set dev icon if in debug mode
-        #[cfg(debug_assertions)]
-        {
-            if let Some(window) = app.get_webview_window(&note_id) {
-                let _ = set_window_icon(&window);
+    let url = WebviewUrl::App(format!("note.html?id={}", note_id).into());
+    log::info!("Building window for note: {}", title);
+
+    let builder = WebviewWindowBuilder::new(&app, &note_id, url)
+        .title(&title)
+        .inner_size(width as f64, height as f64)
+        .position(x as f64, y as f64)
+        .decorations(true)
+        .resizable(true);
+
+    log::info!("Attempting to build window...");
+    match builder.build() {
+        Ok(_) => {
+            log::info!("Window built successfully");
+        }
+        Err(e) => {
+            log::error!("Failed to build window: {}", e);
+            return Err(e.to_string());
+        }
+    }
+
+    // Set dev icon if in debug mode
+    #[cfg(debug_assertions)]
+    {
+        log::info!("Attempting to set dev icon for new window");
+        if let Some(window) = app.get_webview_window(&note_id) {
+            match set_window_icon(&window) {
+                Ok(_) => log::info!("Dev icon set successfully"),
+                Err(e) => log::error!("Failed to set dev icon: {}", e),
             }
+        } else {
+            log::error!("Could not find window after creation to set icon");
         }
     }
 
@@ -113,11 +144,13 @@ fn open_note_window(app: tauri::AppHandle, note_id: String) -> Result<(), String
 }
 
 fn load_dev_icon() -> Result<Image<'static>, String> {
+    log::info!("Loading dev icon bytes");
     let icon_bytes = include_bytes!("../icons/dev-icon.png");
     Image::from_bytes(icon_bytes).map_err(|e| e.to_string())
 }
 
 fn set_window_icon(window: &tauri::WebviewWindow) -> Result<(), String> {
+    log::info!("Setting window icon for window: {}", window.label());
     let icon = load_dev_icon()?;
     window.set_icon(icon).map_err(|e| e.to_string())
 }
@@ -155,6 +188,7 @@ pub fn run() {
                         .build(),
                 )?;
 
+                log::info!("Setup: Setting dev icon for existing windows");
                 // Set dev icon for all windows
                 let app_handle = app.handle();
                 for window in app_handle.webview_windows().values() {

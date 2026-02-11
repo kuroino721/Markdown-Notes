@@ -94,21 +94,8 @@ async function openNoteWindow(noteId) {
             return;
         }
         
-        // Create new window
-        const webview = new WebviewWindow(noteId, {
-            url: `note.html?id=${noteId}`,
-            title: 'ノート',
-            width: DEFAULT_WINDOW_WIDTH,
-            height: DEFAULT_WINDOW_HEIGHT,
-            x: DEFAULT_WINDOW_X,
-            y: DEFAULT_WINDOW_Y,
-            decorations: true,
-            resizable: true,
-        });
-        
-        webview.once(EVENT_TAURI_ERROR, (e) => {
-            console.error('Window error:', e);
-        });
+        // Create new window via Rust command to ensure icon and state are correct
+        await invoke('open_note_window', { noteId });
     } catch (error) {
         console.error('Failed to open note window:', error);
     }

@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ノート</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        console.log("Note HTML: Initializing...");
+        window.addEventListener('error', (e) => {
+            console.error("Note HTML Error:", e.message, e.filename, e.lineno);
+        });
+    </script>
     <style>
         :root {
             --note-color: #fef3c7;

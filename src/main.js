@@ -7,17 +7,25 @@ import {
 let adapter;
 
 // Render notes grid
-async function renderNotes() {
+async function renderNotes(filter = '') {
     if (!adapter) adapter = await getAdapter();
     
-    const notes = await adapter.getNotes();
+    let notes = await adapter.getNotes();
     const grid = document.getElementById('notes-grid');
     const emptyState = document.getElementById('empty-state');
 
-    if (notes.length === 0) {
+    if (notes.length === 0 && !filter) {
         grid.style.display = 'none';
         emptyState.style.display = 'block';
         return;
+    }
+
+    if (filter) {
+        const query = filter.toLowerCase();
+        notes = notes.filter(note => 
+            note.title.toLowerCase().includes(query) || 
+            note.content.toLowerCase().includes(query)
+        );
     }
 
     grid.style.display = 'grid';
@@ -129,6 +137,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // New note button
     document.getElementById('btn-new').addEventListener('click', createNewNote);
+
+    // Search input
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('input', (e) => {
+        renderNotes(e.target.value);
+    });
 
     // Listen for file open events
     adapter.onFileOpen(async (filePath) => {

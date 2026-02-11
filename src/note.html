@@ -238,6 +238,28 @@
         .setting-item input[type="range"] {
             flex: 1;
         }
+
+        .color-palette {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.active {
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
     </style>
 </head>
 
@@ -246,6 +268,7 @@
         <header class="note-header" data-tauri-drag-region>
             <span class="title" id="note-title">ノート</span>
             <div class="actions">
+                <button id="btn-export" title="Markdownとして保存 (エクスポート)">📥</button>
                 <button id="btn-settings" title="設定">⚙️</button>
                 <button id="btn-toggle" title="モード切替 (Ctrl+/)">📝</button>
                 <button id="btn-delete" class="delete" title="削除">🗑️</button>
@@ -258,6 +281,18 @@
                 <label>行間</label>
                 <input type="range" id="line-height-range" min="0.8" max="2.0" step="0.1" value="1.4">
                 <span id="line-height-value">1.4</span>
+            </div>
+            <div class="setting-item" style="margin-top: 12px; flex-direction: column; align-items: flex-start;">
+                <label style="margin-bottom: 8px;">ノートの色</label>
+                <div class="color-palette">
+                    <div class="color-option" data-color="#fef3c7" style="background: #fef3c7;"></div>
+                    <div class="color-option" data-color="#d1fae5" style="background: #d1fae5;"></div>
+                    <div class="color-option" data-color="#dbeafe" style="background: #dbeafe;"></div>
+                    <div class="color-option" data-color="#fce7f3" style="background: #fce7f3;"></div>
+                    <div class="color-option" data-color="#e9d5ff" style="background: #e9d5ff;"></div>
+                    <div class="color-option" data-color="#ffffff" style="background: #ffffff; border: 1px solid #ddd;">
+                    </div>
+                </div>
             </div>
         </div>
 

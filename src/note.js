@@ -283,6 +283,40 @@ async function deleteNote() {
     }
 }
 
+// Export as markdown file
+async function exportAsMarkdown() {
+    const content = isEditorMode 
+        ? document.getElementById('source-editor').value 
+        : getEditorContent();
+    
+    const title = extractTitle(content);
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Update note color
+async function updateNoteColor(color) {
+    if (!noteId || !noteData) return;
+    
+    noteData.color = color;
+    document.documentElement.style.setProperty('--note-color', color);
+    
+    // Update active state in UI
+    document.querySelectorAll('.color-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.color === color);
+    });
+    
+    await saveNote();
+}
+
 // Save window position/size
 async function saveWindowState() {
     if (!noteId || !noteData) return;
@@ -339,6 +373,13 @@ function setupSettings() {
         document.documentElement.style.setProperty('--line-height', value);
         localStorage.setItem(STORAGE_KEY_LINE_HEIGHT, value);
     });
+
+    // Handle color selection
+    document.querySelectorAll('.color-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            updateNoteColor(opt.dataset.color);
+        });
+    });
 }
 
 // Setup event listeners
@@ -347,6 +388,8 @@ function setupEventListeners() {
     document.getElementById('btn-toggle').addEventListener('click', toggleEditorMode);
 
     document.getElementById('btn-delete').addEventListener('click', deleteNote);
+    
+    document.getElementById('btn-export').addEventListener('click', exportAsMarkdown);
 
     // Source editor input
     document.getElementById('source-editor').addEventListener('input', () => {
@@ -417,6 +460,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             if (noteData.color) {
                 document.documentElement.style.setProperty('--note-color', noteData.color);
+                const activeOpt = document.querySelector(`.color-option[data-color="${noteData.color}"]`);
+                if (activeOpt) activeOpt.classList.add('active');
             }
 
             await initEditor(noteData.content);

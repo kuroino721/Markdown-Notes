@@ -1,6 +1,7 @@
 /**
  * Browser implementation using localStorage
  */
+import { NOTE_COLOR_DEFAULT } from '../constants.js';
 
 const STORAGE_KEY = 'markdown_editor_notes';
 
@@ -32,7 +33,7 @@ export const BrowserAdapter = {
             content: '',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            color: '#ffffff'
+            color: NOTE_COLOR_DEFAULT
         };
         notes.push(newNote);
         saveStoredNotes(notes);
@@ -60,8 +61,8 @@ export const BrowserAdapter = {
     async openNote(id) {
         // In browser, we just navigate or open in new tab
         const url = `note.html?id=${id}`;
-        // Using window.open to mimic multiple windows
-        window.open(url, '_blank');
+        // Using window.open with the id as the window name to reuse existing tabs for the same note
+        window.open(url, id);
     },
 
     async confirm(message, options = {}) {

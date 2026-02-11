@@ -151,6 +151,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Listen for note open events (browser side panel)
+    window.addEventListener('open-note-sidebar', (e) => {
+        const noteId = e.detail.id;
+        const sidePanel = document.getElementById('note-side-panel');
+        const iframe = document.getElementById('note-iframe');
+        
+        iframe.src = `note.html?id=${noteId}&sidebar=true`;
+        sidePanel.classList.remove('hidden');
+    });
+
+    // Close side panel
+    document.getElementById('close-side-panel').addEventListener('click', () => {
+        const sidePanel = document.getElementById('note-side-panel');
+        const iframe = document.getElementById('note-iframe');
+        
+        sidePanel.classList.add('hidden');
+        iframe.src = 'about:blank';
+        // Refresh notes list in case changes were made in the sidebar
+        renderNotes();
+    });
+
+    // Handle messages from the iframe (e.g., to close the panel)
+    window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'close-sidebar') {
+            document.getElementById('close-side-panel').click();
+        }
+    });
+
     // Refresh notes when window gains focus
     window.addEventListener('focus', () => {
         renderNotes();

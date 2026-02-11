@@ -213,36 +213,127 @@
         .note-card[data-color="#e9d5ff"] {
             background: #e9d5ff;
         }
+
+        /* Split View Styles */
+        #split-view-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .app-container {
+            flex: 1;
+            max-width: none;
+            margin: 0;
+            padding: 24px;
+            overflow-y: auto;
+            transition: flex 0.3s ease;
+        }
+
+        #note-side-panel {
+            width: 50%;
+            height: 100%;
+            background: var(--bg-primary);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, width 0.3s ease;
+            z-index: 100;
+        }
+
+        #note-side-panel.hidden {
+            transform: translateX(100%);
+            width: 0;
+            display: none;
+            /* fallback */
+        }
+
+        /* When side panel is open, we can use flex to share space */
+        #split-view-container:has(#note-side-panel:not(.hidden)) #note-side-panel {
+            display: flex;
+        }
+
+        .side-panel-header {
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        #close-side-panel {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        #close-side-panel:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        #note-iframe {
+            flex: 1;
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Adjustments for the main app container when side panel is open */
+        @media (max-width: 1000px) {
+            #note-side-panel {
+                position: absolute;
+                right: 0;
+                top: 0;
+                width: 100%;
+            }
+        }
     </style>
 </head>
 
 <body>
-    <div class="app-container">
-        <header class="app-header">
-            <div class="header-left">
-                <h1>
-                    <span class="icon">📝</span>
-                    Markdown Notes
-                </h1>
-                <div class="search-container">
-                    <span>🔍</span>
-                    <input type="text" id="search-input" placeholder="検索...">
+    <div id="split-view-container">
+        <div class="app-container">
+            <header class="app-header">
+                <div class="header-left">
+                    <h1>
+                        <span class="icon">📝</span>
+                        Markdown Notes
+                    </h1>
+                    <div class="search-container">
+                        <span>🔍</span>
+                        <input type="text" id="search-input" placeholder="検索...">
+                    </div>
                 </div>
+                <button class="btn-new-note" id="btn-new">
+                    <span>➕</span>
+                    新規ノート
+                </button>
+            </header>
+            <main>
+                <div class="notes-grid" id="notes-grid">
+                    <!-- Notes will be rendered here -->
+                </div>
+                <div class="empty-state" id="empty-state" style="display: none;">
+                    <div class="icon">📋</div>
+                    <p>ノートがありません。新規ノートを作成してください。</p>
+                </div>
+            </main>
+        </div>
+        <div id="note-side-panel" class="hidden">
+            <div class="side-panel-header">
+                <button id="close-side-panel" title="閉じる">✕</button>
             </div>
-            <button class="btn-new-note" id="btn-new">
-                <span>➕</span>
-                新規ノート
-            </button>
-        </header>
-        <main>
-            <div class="notes-grid" id="notes-grid">
-                <!-- Notes will be rendered here -->
-            </div>
-            <div class="empty-state" id="empty-state" style="display: none;">
-                <div class="icon">📋</div>
-                <p>ノートがありません。新規ノートを作成してください。</p>
-            </div>
-        </main>
+            <iframe id="note-iframe" src="about:blank"></iframe>
+        </div>
     </div>
     <script type="module" src="main.js"></script>
 </body>

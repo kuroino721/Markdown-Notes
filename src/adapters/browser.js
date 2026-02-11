@@ -59,10 +59,9 @@ export const BrowserAdapter = {
 
     // UI/Window operations
     async openNote(id) {
-        // In browser, we just navigate or open in new tab
-        const url = `note.html?id=${id}`;
-        // Using window.open with the id as the window name to reuse existing tabs for the same note
-        window.open(url, id);
+        // In browser, we dispatch a custom event to open in side panel instead of a new tab
+        const event = new CustomEvent('open-note-sidebar', { detail: { id } });
+        window.dispatchEvent(event);
     },
 
     async confirm(message, options = {}) {
@@ -74,7 +73,14 @@ export const BrowserAdapter = {
     },
 
     async closeWindow() {
-        window.close();
+        // In sidebar mode, we don't want to close the whole window
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('sidebar') === 'true') {
+            // Tell parent window to close the side panel
+            window.parent.postMessage({ type: 'close-sidebar' }, '*');
+        } else {
+            window.close();
+        }
     },
 
     // Window events (mostly no-ops or simple stubs)

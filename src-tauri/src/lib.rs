@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod notes;
 
 use notes::{Note, NotesStore};
@@ -182,6 +183,8 @@ pub fn run() {
             update_window_state,
             open_note_window,
             save_all_notes,
+            auth::start_google_auth_server,
+            auth::open_external_url,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

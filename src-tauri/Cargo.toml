@@ -27,6 +27,9 @@ tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
+tiny_http = "0.12"
+url = "2.5"
+opener = "0.7"
 
 [dev-dependencies]
 tempfile = "3.25.0"

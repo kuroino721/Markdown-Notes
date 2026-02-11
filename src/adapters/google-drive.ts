@@ -4,12 +4,22 @@
  */
 
 // Replace these with your own credentials from Google Cloud Console via .env file
-const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+const CLIENT_ID_DESKTOP = import.meta.env.VITE_GOOGLE_CLIENT_ID_DESKTOP;
+const CLIENT_SECRET_DESKTOP = import.meta.env.VITE_GOOGLE_CLIENT_SECRET_DESKTOP;
+const CLIENT_ID_WEB = import.meta.env.VITE_GOOGLE_CLIENT_ID_WEB;
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
+const getClientId = () => isTauri() ? CLIENT_ID_DESKTOP : CLIENT_ID_WEB;
+
 const SYNC_FILE_NAME = 'markdown_notes_sync.json';
+
+// Import invoke for Tauri commands
+let invoke: any;
+if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+    import('@tauri-apps/api/core').then(m => { invoke = m.invoke; });
+}
 
 // Global declarations for Google APIs
 declare global {
@@ -58,8 +68,9 @@ export const GoogleDriveService = {
      * Initialize Google APIs
      */
     async init(): Promise<void> {
-        if (!CLIENT_ID || CLIENT_ID.includes('YOUR_CLIENT_ID')) {
-            console.warn('Google Drive Client ID is not set. Please check your .env file.');
+        const clientId = getClientId();
+        if (!clientId || clientId.includes('YOUR_CLIENT_ID')) {
+            console.warn('Google Drive Client ID is not set for this environment. Please check your .env file.');
             return;
         }
 
@@ -94,9 +105,10 @@ export const GoogleDriveService = {
 
             const initGis = () => {
                 try {
-                    console.log('Initializing GIS with CLIENT_ID:', CLIENT_ID);
+                    const clientId = getClientId();
+                    console.log('Initializing GIS with CLIENT_ID:', clientId);
                     tokenClient = google.accounts.oauth2.initTokenClient({
-                        client_id: CLIENT_ID,
+                        client_id: clientId,
                         scope: SCOPES,
                         callback: '', // defined later in signIn
                     });
@@ -134,6 +146,23 @@ export const GoogleDriveService = {
     },
 
     /**
+     * PKCE Helpers
+     */
+    async generatePKCE(): Promise<{ verifier: string; challenge: string }> {
+        const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+            .map(b => b.toString(16).padStart(2, '0')).join('');
+
+        const encoder = new TextEncoder();
+        const data = encoder.encode(verifier);
+        const hash = await crypto.subtle.digest('SHA-256', data);
+
+        const challenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
+            .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+        return { verifier, challenge };
+    },
+
+    /**
      * Sign in to Google
      */
     async signIn(silent = false, loginHint: string | null = null): Promise<any> {
@@ -152,14 +181,72 @@ export const GoogleDriveService = {
             throw new Error('Google Drive client (GIS) failed to initialize.');
         }
 
-        // Use Redirect Flow for Tauri to avoid popup blocking
+        // Use Authorization Code Flow with PKCE for Tauri
         if (isTauri() && !silent) {
-            console.log('[DEBUG] GoogleDriveService: Using Redirect Flow for Tauri');
-            const redirectUri = window.location.origin + '/';
-            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(SCOPES)}&prompt=select_account`;
-            console.log('[DEBUG] GoogleDriveService: Redirecting to:', authUrl);
-            window.location.assign(authUrl);
-            return new Promise(() => { }); // Page will navigate
+            console.log('[DEBUG] GoogleDriveService: Using Authorization Code Flow (PKCE) for Tauri Desktop');
+            const redirectUri = 'http://localhost:51737/';
+
+            try {
+                // 1. Generate PKCE
+                const { verifier, challenge } = await this.generatePKCE();
+
+                // 2. Build Auth URL safely
+                if (!CLIENT_ID_DESKTOP) {
+                    throw new Error('Google CLIENT_ID_DESKTOP is missing. Please check your .env file.');
+                }
+
+                const params = new URLSearchParams({
+                    client_id: CLIENT_ID_DESKTOP,
+                    redirect_uri: redirectUri,
+                    response_type: 'code',
+                    scope: SCOPES,
+                    prompt: 'select_account',
+                    code_challenge: challenge,
+                    code_challenge_method: 'S256'
+                });
+                const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
+                console.log('[DEBUG] GoogleDriveService: Auth URL built', authUrl.substring(0, 50) + '...');
+
+                // 3. Start loopback server and wait for code
+                const codePromise = invoke('start_google_auth_server');
+
+                // 4. Open auth URL in system browser
+                await invoke('open_external_url', { url: authUrl });
+
+                const code = await codePromise;
+                console.log('[DEBUG] GoogleDriveService: Code received from loopback');
+
+                // 5. Exchange code for token
+                const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        code: code,
+                        client_id: CLIENT_ID_DESKTOP,
+                        client_secret: CLIENT_SECRET_DESKTOP,
+                        redirect_uri: redirectUri,
+                        grant_type: 'authorization_code',
+                        code_verifier: verifier,
+                    }),
+                });
+
+                const tokenData = await tokenResponse.json();
+                if (tokenData.error) {
+                    throw new Error(`Token exchange failed: ${tokenData.error_description || tokenData.error}`);
+                }
+
+                const accessToken = tokenData.access_token;
+                if (accessToken) {
+                    gapi.client.setToken({ access_token: accessToken });
+                    localStorage.setItem('markdown_editor_gdrive_enabled', 'true');
+                    return { access_token: accessToken };
+                }
+            } catch (e) {
+                console.error('[DEBUG] GoogleDriveService: Auth failed:', e);
+                throw e;
+            }
+            return new Promise(() => { });
         }
 
         return new Promise((resolve, reject) => {

@@ -99,9 +99,38 @@ fn open_note_window(app: tauri::AppHandle, note_id: String) -> Result<(), String
             .resizable(true)
             .build()
             .map_err(|e| e.to_string())?;
+
+        // Set dev icon if in debug mode
+        #[cfg(debug_assertions)]
+        {
+            if let Some(window) = app.get_webview_window(&note_id) {
+                let _ = set_window_icon(&window);
+            }
+        }
     }
 
     Ok(())
+}
+
+fn load_dev_icon() -> Result<Image<'static>, String> {
+    let icon_bytes = include_bytes!("../icons/dev-icon.png");
+    Image::from_bytes(icon_bytes).map_err(|e| e.to_string())
+}
+
+fn set_window_icon(window: &tauri::WebviewWindow) -> Result<(), String> {
+    let icon = load_dev_icon()?;
+    window.set_icon(icon).map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_dev_icon_loads() {
+        let result = load_dev_icon();
+        assert!(result.is_ok(), "Dev icon should load successfully");
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -128,11 +157,8 @@ pub fn run() {
 
                 // Set dev icon for all windows
                 let app_handle = app.handle();
-                let icon_bytes = include_bytes!("../icons/dev-icon.png");
-                let icon = Image::from_bytes(icon_bytes).expect("failed to parse icon");
-
                 for window in app_handle.webview_windows().values() {
-                    let _ = window.set_icon(icon.clone());
+                    let _ = set_window_icon(window);
                 }
             }
 

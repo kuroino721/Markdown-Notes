@@ -284,4 +284,36 @@ mod tests {
         assert_eq!(restored.notes[0].title, "Test Note");
         assert_eq!(restored.notes[0].content, "Hello, world!");
     }
+
+    #[test]
+    fn test_note_json_serialization() {
+        let note = create_test_note("test-id", "Test Title");
+        let json = serde_json::to_string(&note).unwrap();
+
+        // Verify fields are present in JSON
+        assert!(json.contains("\"id\":\"test-id\""));
+        assert!(json.contains("\"title\":\"Test Title\""));
+        assert!(json.contains("\"content\":\"\""));
+        assert!(json.contains("\"created_at\":"));
+        assert!(json.contains("\"updated_at\":"));
+        assert!(json.contains("\"window_state\":"));
+        assert!(json.contains("\"color\":\"#fef3c7\""));
+    }
+
+    #[test]
+    fn test_window_state_json_serialization() {
+        let ws = WindowState {
+            x: 10,
+            y: 20,
+            width: 100,
+            height: 200,
+        };
+        let json = serde_json::to_string(&ws).unwrap();
+
+        // Verify fields are present in JSON
+        assert!(json.contains("\"x\":10"));
+        assert!(json.contains("\"y\":20"));
+        assert!(json.contains("\"width\":100"));
+        assert!(json.contains("\"height\":200"));
+    }
 }

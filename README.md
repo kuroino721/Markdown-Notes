@@ -46,6 +46,25 @@ npm install
 npm run tauri dev
 ```
 
+## 単体テストの実行
+
+### フロントエンド
+
+Vitest を使用して `src/utils.js` などのユーティリティ関数のテストを実行します。
+
+```powershell
+npm run test
+```
+
+### バックエンド
+
+`src-tauri` ディレクトリ内の Rust コードのテストを実行します。
+
+```powershell
+cd src-tauri
+cargo test
+```
+
 ## ビルド
 
 配布用のインストーラを作成するには：
@@ -83,11 +102,6 @@ npm run tauri build
 - 変更検知（タイトルに * 表示）
 
 ## 今後の改善点
-
-### 私の提案
-- unit test追加
-- 表を2行以上追加できるようにする
-- デバッグモードのアイコンを本番用とかえる
 
 ### AIが生成
 

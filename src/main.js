@@ -199,12 +199,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Google Drive Sync button
     const btnSync = document.getElementById('btn-sync-gdrive');
+    const btnLogout = document.getElementById('btn-logout-gdrive');
+
     if (btnSync) {
-        btnSync.addEventListener('click', async () => {
+        btnSync.addEventListener('click', async (e) => {
+            // If logout button was clicked, don't trigger sync
+            if (e.target.closest('#btn-logout-gdrive')) return;
+
             const statusLabel = document.getElementById('sync-status');
             try {
+                btnSync.classList.add('syncing');
+                btnSync.classList.remove('synced', 'error');
                 statusLabel.textContent = '同期中...';
-                statusLabel.className = 'status-indicator syncing';
                 
                 if (!adapter.isSyncEnabled()) {
                     await adapter.signIn();
@@ -216,22 +222,53 @@ document.addEventListener('DOMContentLoaded', async () => {
                 updateSyncStatus();
             } catch (error) {
                 console.error('Sync failed:', error);
-                statusLabel.textContent = '同期エラー';
-                statusLabel.className = 'status-indicator error';
+                btnSync.classList.remove('syncing');
+                btnSync.classList.add('error');
+                statusLabel.textContent = 'エラー';
             }
         });
     }
 
-    function updateSyncStatus() {
+    if (btnLogout) {
+        btnLogout.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (confirm('Google Drive 同期を解除（ログアウト）しますか？')) {
+                if (adapter.signOut) {
+                    await adapter.signOut();
+                    await renderNotes();
+                    updateSyncStatus();
+                }
+            }
+        });
+    }
+
+    async function updateSyncStatus() {
+        const btnSync = document.getElementById('btn-sync-gdrive');
         const statusLabel = document.getElementById('sync-status');
-        if (!statusLabel) return;
+        const iconSpan = btnSync?.querySelector('.icon');
+        const labelSpan = btnSync?.querySelector('.btn-label');
+        if (!statusLabel || !btnSync) return;
         
         if (adapter.isSyncEnabled && adapter.isSyncEnabled()) {
+            btnSync.classList.add('synced');
+            btnSync.classList.remove('syncing', 'error');
             statusLabel.textContent = '同期済み';
-            statusLabel.className = 'status-indicator';
+            if (iconSpan) iconSpan.textContent = '✅';
+            
+            // Show email if available
+            if (adapter.getUserInfo) {
+                const userEmail = await adapter.getUserInfo();
+                if (userEmail) {
+                    btnSync.title = `${userEmail} と同期中`;
+                    if (labelSpan) labelSpan.textContent = userEmail.split('@')[0];
+                }
+            }
         } else {
-            statusLabel.textContent = '';
-            statusLabel.className = 'status-indicator';
+            btnSync.classList.remove('synced', 'syncing', 'error');
+            btnSync.title = 'Google Drive で同期';
+            statusLabel.textContent = '同期オフ';
+            if (iconSpan) iconSpan.textContent = '🔄';
+            if (labelSpan) labelSpan.textContent = 'G-Drive 同期';
         }
     }
 

@@ -16,6 +16,24 @@ export const BrowserAdapter = {
     // Sync operations
     async initSync() {
         await GoogleDriveService.init();
+        if (GoogleDriveService.hasPreviousSession()) {
+            try {
+                // Try silent sign-in without popup
+                await GoogleDriveService.signIn(true);
+                await this.syncWithDrive();
+            } catch (e) {
+                console.log('Silent auto-sync not possible:', e);
+                // Don't show error to user, just stay in manual sync state
+            }
+        }
+    },
+
+    async getUserInfo() {
+        return await GoogleDriveService.getUserInfo();
+    },
+
+    async signOut() {
+        GoogleDriveService.signOut();
     },
 
     async signIn() {
@@ -33,6 +51,31 @@ export const BrowserAdapter = {
         if (!GoogleDriveService.isLoggedIn()) return;
         
         try {
+            // Check for account switch
+            const currentUser = await GoogleDriveService.getUserInfo();
+            const lastUser = localStorage.getItem('markdown_editor_last_synced_user');
+            
+            if (lastUser && currentUser && lastUser !== currentUser) {
+                const choice = await this.confirm(
+                    `アカウントが ${lastUser} から ${currentUser} に切り替わりました。どうしますか？\n\n「はい」: 現在のノートを消して ${currentUser} のデータを読み込む\n「いいえ」: 現在のノートと ${currentUser} のデータを合体（マージ）させる`,
+                    {
+                        title: 'アカウント切り替えの確認',
+                        okLabel: '切り替える',
+                        cancelLabel: 'マージする'
+                    }
+                );
+                
+                if (choice) {
+                    // Switch: Clear local data before fetching
+                    console.log('Switching account data, clearing local storage temporarily');
+                    localStorage.setItem(STORAGE_KEY, '[]');
+                }
+            }
+
+            if (currentUser) {
+                localStorage.setItem('markdown_editor_last_synced_user', currentUser);
+            }
+
             const file = await GoogleDriveService.findSyncFile();
             if (file) {
                 const remoteNotes = await GoogleDriveService.readSyncFile(file.id);

@@ -88,14 +88,14 @@ export const GoogleDriveService = {
     /**
      * Sign in to Google
      */
-    async signIn() {
+    async signIn(silent = false) {
         if (!gisInited || !tokenClient) {
             console.log('GIS not inited, attempting to re-init...');
             await this.init();
         }
 
         if (!tokenClient) {
-            throw new Error('Google Drive client (GIS) failed to initialize. Check Client ID and Origin settings.');
+            throw new Error('Google Drive client (GIS) failed to initialize.');
         }
 
         return new Promise((resolve, reject) => {
@@ -105,15 +105,34 @@ export const GoogleDriveService = {
                     console.error('Google Auth Error:', resp.error);
                     reject(resp);
                 }
+                localStorage.setItem('markdown_editor_gdrive_enabled', 'true');
                 resolve(resp);
             };
 
-            if (gapi.client.getToken() === null) {
-                tokenClient.requestAccessToken({ prompt: 'consent' });
+            if (silent) {
+                // Try to get token without showing any popup
+                // If it fails, it will call the callback with an error, but no popup will appear
+                tokenClient.requestAccessToken({ prompt: 'none' });
             } else {
-                tokenClient.requestAccessToken({ prompt: '' });
+                // For manual sign-in, show the account picker
+                tokenClient.requestAccessToken({ prompt: 'select_account' });
             }
         });
+    },
+
+    signOut() {
+        if (gapi.client) {
+            const token = gapi.client.getToken();
+            if (token !== null) {
+                google.accounts.oauth2.revoke(token.access_token);
+                gapi.client.setToken(null);
+            }
+        }
+        localStorage.removeItem('markdown_editor_gdrive_enabled');
+    },
+
+    hasPreviousSession() {
+        return localStorage.getItem('markdown_editor_gdrive_enabled') === 'true';
     },
 
     /**
@@ -127,6 +146,22 @@ export const GoogleDriveService = {
         });
         const files = response.result.files;
         return files && files.length > 0 ? files[0] : null;
+    },
+
+    /**
+     * Get current user email
+     */
+    async getUserInfo() {
+        if (!this.isLoggedIn()) return null;
+        try {
+            const response = await gapi.client.drive.about.get({
+                fields: 'user(emailAddress)'
+            });
+            return response.result.user.emailAddress;
+        } catch (e) {
+            console.error('Failed to get user info:', e);
+            return null;
+        }
     },
 
     /**

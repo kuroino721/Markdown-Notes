@@ -113,35 +113,108 @@
         .btn-secondary {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            padding: 10px 16px;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 8px 16px;
             border-radius: 12px;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             gap: 8px;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn-secondary:hover {
             background: rgba(255, 255, 255, 0.1);
             border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            transform: translateY(-1px);
         }
 
-        .status-indicator {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.5);
+        /* Synced State */
+        .btn-secondary.synced {
+            background: rgba(16, 185, 129, 0.1);
+            border-color: rgba(16, 185, 129, 0.3);
+            color: #10b981;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+        }
+
+        .btn-secondary.synced:hover {
+            background: rgba(16, 185, 129, 0.15);
+            border-color: rgba(16, 185, 129, 0.5);
+        }
+
+        /* Syncing State Animation */
+        .btn-secondary.syncing .icon {
+            animation: rotate 2s linear infinite;
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Error State */
+        .btn-secondary.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .status-badge {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 2px 6px;
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
             margin-left: 4px;
+            transition: all 0.3s;
         }
 
-        .status-indicator.syncing {
-            color: var(--accent);
+        .synced .status-badge {
+            background: rgba(16, 185, 129, 0.2);
         }
 
-        .status-indicator.error {
-            color: var(--error);
+        .syncing .status-badge {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .error .status-badge {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .btn-logout {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            padding: 4px;
+            cursor: pointer;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            width: 24px;
+            height: 24px;
+        }
+
+        .btn-logout:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .synced .btn-logout {
+            display: flex;
         }
 
         .notes-grid {
@@ -358,10 +431,11 @@
                 <div class="header-right">
                     <div id="gdrive-sync-container">
                         <button id="btn-sync-gdrive" class="btn-secondary" title="Google Drive で同期">
-                            <span class="icon">☁️</span>
-                            <span class="btn-label">同期</span>
+                            <span class="icon">🔄</span>
+                            <span class="btn-label">G-Drive 同期</span>
+                            <span id="sync-status" class="status-badge"></span>
+                            <span id="btn-logout-gdrive" class="btn-logout" title="ログアウト / アカウント切り替え">✕</span>
                         </button>
-                        <span id="sync-status" class="status-indicator"></span>
                     </div>
                     <button class="btn-new-note" id="btn-new">
                         <span>➕</span>

@@ -108,35 +108,20 @@ async fn open_note_window(app: tauri::AppHandle, note_id: String) -> Result<(), 
     let url = WebviewUrl::App(format!("note.html?id={}", note_id).into());
     log::info!("Building window for note: {}", title);
 
-    let builder = WebviewWindowBuilder::new(&app, &note_id, url)
+    WebviewWindowBuilder::new(&app, &note_id, url)
         .title(&title)
         .inner_size(width as f64, height as f64)
         .position(x as f64, y as f64)
         .decorations(true)
-        .resizable(true);
-
-    log::info!("Attempting to build window...");
-    match builder.build() {
-        Ok(_) => {
-            log::info!("Window built successfully");
-        }
-        Err(e) => {
-            log::error!("Failed to build window: {}", e);
-            return Err(e.to_string());
-        }
-    }
+        .resizable(true)
+        .build()
+        .map_err(|e| e.to_string())?;
 
     // Set dev icon if in debug mode
     #[cfg(debug_assertions)]
     {
-        log::info!("Attempting to set dev icon for new window");
         if let Some(window) = app.get_webview_window(&note_id) {
-            match set_window_icon(&window) {
-                Ok(_) => log::info!("Dev icon set successfully"),
-                Err(e) => log::error!("Failed to set dev icon: {}", e),
-            }
-        } else {
-            log::error!("Could not find window after creation to set icon");
+            let _ = set_window_icon(&window);
         }
     }
 

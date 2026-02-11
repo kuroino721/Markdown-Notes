@@ -1,6 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
-import { getCurrentWindow } from '@tauri-apps/api/window';
-import { ask } from '@tauri-apps/plugin-dialog';
+import { getAdapter } from './adapters/index.js';
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/frame.css';
@@ -22,6 +20,8 @@ import {
     MOVE_DEBOUNCE_MS,
     RESIZE_DEBOUNCE_MS
 } from './constants.js';
+
+let adapter;
 
 // Global editor view reference
 let editorView = null;
@@ -197,6 +197,7 @@ function scheduleAutoSave() {
 // Save note to backend
 async function saveNote() {
     if (!noteId || !noteData) return;
+    if (!adapter) adapter = await getAdapter();
 
     const content = isEditorMode 
         ? document.getElementById('source-editor').value 
@@ -210,14 +211,13 @@ async function saveNote() {
     noteData.updated_at = new Date().toISOString();
 
     try {
-        await invoke('save_note', { note: noteData });
+        await adapter.saveNote(noteData);
         lastSavedContent = content;
         document.getElementById('save-status').textContent = '保存済み';
         document.getElementById('note-title').textContent = title;
         
         // Update window title
-        const currentWindow = getCurrentWindow();
-        currentWindow.setTitle(title);
+        await adapter.setWindowTitle(title);
     } catch (error) {
         console.error('Failed to save note:', error);
         document.getElementById('save-status').textContent = '保存エラー';
@@ -264,8 +264,9 @@ async function toggleEditorMode() {
 // Delete note
 async function deleteNote() {
     if (!noteId) return;
+    if (!adapter) adapter = await getAdapter();
 
-    const confirmed = await ask('このノートを削除しますか？', {
+    const confirmed = await adapter.confirm('このノートを削除しますか？', {
         title: '削除の確認',
         kind: 'warning',
         okLabel: '削除',
@@ -273,10 +274,9 @@ async function deleteNote() {
     });
     if (confirmed) {
         try {
-            await invoke('delete_note', { noteId });
+            await adapter.deleteNote(noteId);
             // Close window after deletion
-            const currentWindow = getCurrentWindow();
-            await currentWindow.close();
+            await adapter.closeWindow();
         } catch (error) {
             console.error('Failed to delete note:', error);
         }
@@ -286,19 +286,19 @@ async function deleteNote() {
 // Save window position/size
 async function saveWindowState() {
     if (!noteId || !noteData) return;
+    if (!adapter) adapter = await getAdapter();
 
     try {
-        const currentWindow = getCurrentWindow();
-        const position = await currentWindow.outerPosition();
-        const size = await currentWindow.innerSize();
+        const position = await adapter.getWindowPosition();
+        const size = await adapter.getWindowSize();
 
-        await invoke('update_window_state', {
+        await adapter.updateWindowState(
             noteId,
-            x: position.x,
-            y: position.y,
-            width: size.width,
-            height: size.height,
-        });
+            position.x,
+            position.y,
+            size.width,
+            size.height
+        );
     } catch (error) {
         console.error('Failed to save window state:', error);
     }
@@ -370,23 +370,26 @@ function setupEventListeners() {
     });
 
     // Save window state on move/resize
-    const currentWindow = getCurrentWindow();
-    let moveTimeout = null;
+    if (adapter) {
+        let moveTimeout = null;
 
-    currentWindow.onMoved(() => {
-        if (moveTimeout) clearTimeout(moveTimeout);
-        moveTimeout = setTimeout(saveWindowState, MOVE_DEBOUNCE_MS);
-    });
+        adapter.onWindowMoved(() => {
+            if (moveTimeout) clearTimeout(moveTimeout);
+            moveTimeout = setTimeout(saveWindowState, MOVE_DEBOUNCE_MS);
+        });
 
-    currentWindow.onResized(() => {
-        if (moveTimeout) clearTimeout(moveTimeout);
-        moveTimeout = setTimeout(saveWindowState, RESIZE_DEBOUNCE_MS);
-    });
+        adapter.onWindowResized(() => {
+            if (moveTimeout) clearTimeout(moveTimeout);
+            moveTimeout = setTimeout(saveWindowState, RESIZE_DEBOUNCE_MS);
+        });
+    }
 }
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOMContentLoaded fired');
+    adapter = await getAdapter();
+    
     noteId = getNoteIdFromUrl();
     console.log('Note ID:', noteId);
     
@@ -401,7 +404,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         let retries = 10;
         while (retries > 0) {
             console.log('Attempting to load note, retries left:', retries);
-            noteData = await invoke('get_note', { noteId });
+            noteData = await adapter.getNote(noteId);
             if (noteData) break;
             retries--;
             await new Promise(resolve => setTimeout(resolve, 200));
@@ -418,8 +421,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             await initEditor(noteData.content);
             
-            const currentWindow = getCurrentWindow();
-            currentWindow.setTitle(noteData.title);
+            await adapter.setWindowTitle(noteData.title);
         } else {
             console.error('Note not found:', noteId);
             // Create minimal noteData for saving

@@ -1,20 +1,16 @@
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
-import { readTextFile } from '@tauri-apps/plugin-fs';
-import { ask } from '@tauri-apps/plugin-dialog';
+import { getAdapter } from './adapters/index.js';
 import { escapeHtml, getPreviewText, getFileNameFromPath } from './utils.js';
 import { 
-    DEFAULT_WINDOW_WIDTH, 
-    DEFAULT_WINDOW_HEIGHT, 
-    DEFAULT_WINDOW_X, 
-    DEFAULT_WINDOW_Y,
-    EVENT_OPEN_FILE,
-    EVENT_TAURI_ERROR
+    EVENT_OPEN_FILE
 } from './constants.js';
+
+let adapter;
 
 // Render notes grid
 async function renderNotes() {
-    const notes = await invoke('get_all_notes');
+    if (!adapter) adapter = await getAdapter();
+    
+    const notes = await adapter.getNotes();
     const grid = document.getElementById('notes-grid');
     const emptyState = document.getElementById('empty-state');
 
@@ -66,36 +62,25 @@ async function renderNotes() {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const noteId = btn.dataset.id;
-            const confirmed = await ask('このノートを削除しますか？', {
+            const confirmed = await adapter.confirm('このノートを削除しますか？', {
                 title: '削除の確認',
                 kind: 'warning',
                 okLabel: '削除',
                 cancelLabel: 'キャンセル'
             });
             if (confirmed) {
-                await invoke('delete_note', { noteId });
+                await adapter.deleteNote(noteId);
                 renderNotes();
             }
         });
     });
 }
 
-// escapeHtml is imported from utils.js
-
-// Open note window using JavaScript Tauri API
+// Open note window using Adapter
 async function openNoteWindow(noteId) {
+    if (!adapter) adapter = await getAdapter();
     try {
-        const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-        
-        // Check if window already exists
-        const existing = await WebviewWindow.getByLabel(noteId);
-        if (existing) {
-            await existing.setFocus();
-            return;
-        }
-        
-        // Create new window via Rust command to ensure icon and state are correct
-        await invoke('open_note_window', { noteId });
+        await adapter.openNote(noteId);
     } catch (error) {
         console.error('Failed to open note window:', error);
     }
@@ -103,10 +88,11 @@ async function openNoteWindow(noteId) {
 
 // Create new note
 async function createNewNote() {
+    if (!adapter) adapter = await getAdapter();
     try {
-        const note = await invoke('create_note');
+        const note = await adapter.createNote();
         console.log('Created note:', note);
-        renderNotes();
+        await renderNotes();
         // Open the note window after creation
         await openNoteWindow(note.id);
     } catch (error) {
@@ -114,21 +100,22 @@ async function createNewNote() {
     }
 }
 
-// Handle file opened from command line
+// Handle file opened from command line (Tauri only)
 async function handleFileOpen(filePath) {
+    if (!adapter) adapter = await getAdapter();
     try {
-        const content = await readTextFile(filePath);
+        const content = await adapter.readTextFile(filePath);
         
         // Create a new note with this content
-        const note = await invoke('create_note');
+        const note = await adapter.createNote();
         
         // Update the note with the file content
         const fileName = getFileNameFromPath(filePath);
         note.content = content;
         note.title = fileName;
         
-        await invoke('save_note', { note });
-        renderNotes();
+        await adapter.saveNote(note);
+        await renderNotes();
     } catch (error) {
         console.error('Failed to open file:', error);
     }
@@ -136,14 +123,15 @@ async function handleFileOpen(filePath) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+    adapter = await getAdapter();
+    
     await renderNotes();
 
     // New note button
     document.getElementById('btn-new').addEventListener('click', createNewNote);
 
     // Listen for file open events
-    listen(EVENT_OPEN_FILE, async (event) => {
-        const filePath = event.payload;
+    adapter.onFileOpen(async (filePath) => {
         if (filePath) {
             await handleFileOpen(filePath);
         }

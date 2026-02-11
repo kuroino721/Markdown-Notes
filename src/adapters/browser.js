@@ -1,6 +1,4 @@
-/**
- * Browser implementation using localStorage
- */
+import { GoogleDriveService } from './google-drive.js';
 import { NOTE_COLOR_DEFAULT } from '../constants.js';
 
 const STORAGE_KEY = 'markdown_editor_notes';
@@ -15,6 +13,57 @@ function saveStoredNotes(notes) {
 }
 
 export const BrowserAdapter = {
+    // Sync operations
+    async initSync() {
+        await GoogleDriveService.init();
+    },
+
+    async signIn() {
+        await GoogleDriveService.signIn();
+        await this.syncWithDrive();
+    },
+
+    async syncWithDrive() {
+        if (!GoogleDriveService.isLoggedIn()) return;
+        
+        try {
+            const file = await GoogleDriveService.findSyncFile();
+            if (file) {
+                const remoteNotes = await GoogleDriveService.readSyncFile(file.id);
+                // Basic merge logic: remote wins for now, or we could do something more complex
+                const localNotes = getStoredNotes();
+                
+                // For simplicity, let's just use the one with later updated_at for each note
+                const merged = [...remoteNotes];
+                localNotes.forEach(localNote => {
+                    const existingIndex = merged.findIndex(n => n.id === localNote.id);
+                    if (existingIndex === -1) {
+                        merged.push(localNote);
+                    } else {
+                        const remoteNote = merged[existingIndex];
+                        if (new Date(localNote.updated_at) > new Date(remoteNote.updated_at)) {
+                            merged[existingIndex] = localNote;
+                        }
+                    }
+                });
+                
+                saveStoredNotes(merged);
+                await GoogleDriveService.saveToDrive(merged);
+            } else {
+                // First time sync, upload local notes
+                const localNotes = getStoredNotes();
+                await GoogleDriveService.saveToDrive(localNotes);
+            }
+        } catch (error) {
+            console.error('Failed to sync with Google Drive:', error);
+            throw error;
+        }
+    },
+
+    isSyncEnabled() {
+        return GoogleDriveService.isLoggedIn();
+    },
+
     // Data operations
     async getNotes() {
         return getStoredNotes();
@@ -37,6 +86,10 @@ export const BrowserAdapter = {
         };
         notes.push(newNote);
         saveStoredNotes(notes);
+        
+        // Background sync
+        this.syncWithDrive().catch(console.error);
+        
         return newNote;
     },
 
@@ -49,12 +102,18 @@ export const BrowserAdapter = {
             notes.push(note);
         }
         saveStoredNotes(notes);
+        
+        // Background sync
+        this.syncWithDrive().catch(console.error);
     },
 
     async deleteNote(noteId) {
         const notes = getStoredNotes();
         const filtered = notes.filter(n => n.id !== noteId);
         saveStoredNotes(filtered);
+        
+        // Background sync
+        this.syncWithDrive().catch(console.error);
     },
 
     // UI/Window operations

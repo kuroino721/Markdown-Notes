@@ -3,6 +3,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   root: 'src',
+  envDir: '../',
   build: {
     outDir: '../dist',
     emptyOutDir: true,
@@ -16,6 +17,9 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+    },
   },
 });
 

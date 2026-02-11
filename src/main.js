@@ -179,6 +179,54 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // Initialize sync if available
+    if (adapter.initSync) {
+        try {
+            await adapter.initSync();
+            updateSyncStatus();
+        } catch (e) {
+            console.error('Failed to init sync:', e);
+        }
+    }
+
+    // Google Drive Sync button
+    const btnSync = document.getElementById('btn-sync-gdrive');
+    if (btnSync) {
+        btnSync.addEventListener('click', async () => {
+            const statusLabel = document.getElementById('sync-status');
+            try {
+                statusLabel.textContent = '同期中...';
+                statusLabel.className = 'status-indicator syncing';
+                
+                if (!adapter.isSyncEnabled()) {
+                    await adapter.signIn();
+                } else {
+                    await adapter.syncWithDrive();
+                }
+                
+                await renderNotes();
+                updateSyncStatus();
+            } catch (error) {
+                console.error('Sync failed:', error);
+                statusLabel.textContent = '同期エラー';
+                statusLabel.className = 'status-indicator error';
+            }
+        });
+    }
+
+    function updateSyncStatus() {
+        const statusLabel = document.getElementById('sync-status');
+        if (!statusLabel) return;
+        
+        if (adapter.isSyncEnabled && adapter.isSyncEnabled()) {
+            statusLabel.textContent = '同期済み';
+            statusLabel.className = 'status-indicator';
+        } else {
+            statusLabel.textContent = '';
+            statusLabel.className = 'status-indicator';
+        }
+    }
+
     // Refresh notes when window gains focus
     window.addEventListener('focus', () => {
         renderNotes();

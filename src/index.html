@@ -104,6 +104,46 @@
             box-shadow: 0 6px 16px rgba(251, 191, 36, 0.4);
         }
 
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .status-indicator {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-left: 4px;
+        }
+
+        .status-indicator.syncing {
+            color: var(--accent);
+        }
+
+        .status-indicator.error {
+            color: var(--error);
+        }
+
         .notes-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -297,6 +337,8 @@
             }
         }
     </style>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 
 <body>
@@ -313,10 +355,19 @@
                         <input type="text" id="search-input" placeholder="検索...">
                     </div>
                 </div>
-                <button class="btn-new-note" id="btn-new">
-                    <span>➕</span>
-                    新規ノート
-                </button>
+                <div class="header-right">
+                    <div id="gdrive-sync-container">
+                        <button id="btn-sync-gdrive" class="btn-secondary" title="Google Drive で同期">
+                            <span class="icon">☁️</span>
+                            <span class="btn-label">同期</span>
+                        </button>
+                        <span id="sync-status" class="status-indicator"></span>
+                    </div>
+                    <button class="btn-new-note" id="btn-new">
+                        <span>➕</span>
+                        新規ノート
+                    </button>
+                </div>
             </header>
             <main>
                 <div class="notes-grid" id="notes-grid">

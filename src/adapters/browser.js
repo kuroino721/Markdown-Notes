@@ -24,6 +24,12 @@ export const BrowserAdapter = {
     },
 
     async syncWithDrive() {
+        // If in an iframe (sidebar), delegate sync to parent window
+        if (window.self !== window.top) {
+            window.parent.postMessage({ type: 'request-sync' }, '*');
+            return;
+        }
+
         if (!GoogleDriveService.isLoggedIn()) return;
         
         try {

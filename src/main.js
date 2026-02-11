@@ -173,11 +173,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Handle messages from the iframe (e.g., to close the panel)
-    window.addEventListener('message', (e) => {
-        if (e.data && e.data.type === 'close-sidebar') {
-            document.getElementById('close-side-panel').click();
+    window.addEventListener('message', async (e) => {
+    if (!e.data) return;
+
+    if (e.data.type === 'close-sidebar') {
+        document.getElementById('close-side-panel').click();
+    } else if (e.data.type === 'request-sync') {
+        console.log('Sync requested from iframe');
+        const adapter = await getAdapter();
+        if (adapter.syncWithDrive) {
+            adapter.syncWithDrive().catch(console.error);
         }
-    });
+    }
+});
 
     // Initialize sync if available
     if (adapter.initSync) {

@@ -5,371 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Markdown Notes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
         /* Main window specific styles */
         body {
-            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            background: radial-gradient(circle at top right, #24273a, #181926);
             min-height: 100vh;
             margin: 0;
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #cad3f5;
         }
 
-        .app-container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-
-        .app-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 24px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            flex: 1;
-        }
-
-        .search-container {
-            display: flex;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 6px 12px;
-            gap: 8px;
-            max-width: 300px;
-            flex: 1;
-            transition: all 0.2s;
-        }
-
-        .search-container:focus-within {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(137, 180, 250, 0.2);
-        }
-
-        .search-container input {
-            background: transparent;
-            border: none;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-            width: 100%;
-        }
-
-        .search-container input::placeholder {
-            color: rgba(255, 255, 255, 0.4);
-        }
-
-        .app-header h1 {
-            color: #fff;
-            font-size: 24px;
-            font-weight: 600;
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .app-header h1 .icon {
-            font-size: 28px;
-        }
-
-        .btn-new-note {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            color: #1a1a1a;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
-        }
-
-        .btn-new-note:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(251, 191, 36, 0.4);
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.8);
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.2);
-            color: #fff;
-            transform: translateY(-1px);
-        }
-
-        /* Synced State */
-        .btn-secondary.synced {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: rgba(16, 185, 129, 0.3);
-            color: #10b981;
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
-        }
-
-        .btn-secondary.synced:hover {
-            background: rgba(16, 185, 129, 0.15);
-            border-color: rgba(16, 185, 129, 0.5);
-        }
-
-        /* Syncing State Animation */
-        .btn-secondary.syncing .icon {
-            animation: rotate 2s linear infinite;
-        }
-
-        @keyframes rotate {
-            from {
-                transform: rotate(0deg);
-            }
-
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        /* Error State */
-        .btn-secondary.error {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.3);
-            color: #ef4444;
-        }
-
-        .status-badge {
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            padding: 2px 6px;
-            border-radius: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            margin-left: 4px;
-            transition: all 0.3s;
-        }
-
-        .synced .status-badge {
-            background: rgba(16, 185, 129, 0.2);
-        }
-
-        .syncing .status-badge {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
-        }
-
-        .error .status-badge {
-            background: rgba(239, 68, 68, 0.2);
-        }
-
-        .btn-logout {
-            background: transparent;
-            border: none;
-            color: rgba(255, 255, 255, 0.4);
-            padding: 4px;
-            cursor: pointer;
-            border-radius: 50%;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-            width: 24px;
-            height: 24px;
-        }
-
-        .btn-logout:hover {
-            color: #ef4444;
-            background: rgba(239, 68, 68, 0.1);
-        }
-
-        .synced .btn-logout {
-            display: flex;
-        }
-
-        .btn-action {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.8);
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-action:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateY(-1px);
-        }
-
-        .btn-action.active {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent);
-        }
-
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.1);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-danger:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: rgba(239, 68, 68, 0.4);
-            transform: translateY(-1px);
-        }
-
-        .notes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 16px;
-        }
-
-        .note-card {
-            background: #fef3c7;
-            border-radius: 12px;
-            padding: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-            min-height: 120px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .note-card:hover {
-            transform: translateY(-4px) rotate(1deg);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        }
-
-        .note-card .title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .note-card .preview {
-            font-size: 12px;
-            color: #666;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 4;
-            line-clamp: 4;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .note-card .timestamp {
-            position: absolute;
-            bottom: 8px;
-            right: 12px;
-            font-size: 10px;
-            color: rgba(0, 0, 0, 0.4);
-        }
-
-        .note-card .delete-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: transparent;
-            border: none;
-            padding: 4px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.2s;
-            font-size: 14px;
-        }
-
-        .note-card:hover .delete-btn {
-            opacity: 0.6;
-        }
-
-        .note-card .delete-btn:hover {
-            opacity: 1;
-            color: #dc2626;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .empty-state .icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-        }
-
-        .empty-state p {
-            font-size: 16px;
-            margin: 0;
-        }
-
-        /* Color variations for notes */
-        .note-card[data-color="#fef3c7"] {
-            background: #fef3c7;
-        }
-
-        .note-card[data-color="#d1fae5"] {
-            background: #d1fae5;
-        }
-
-        .note-card[data-color="#dbeafe"] {
-            background: #dbeafe;
-        }
-
-        .note-card[data-color="#fce7f3"] {
-            background: #fce7f3;
-        }
-
-        .note-card[data-color="#e9d5ff"] {
-            background: #e9d5ff;
-        }
-
-        /* Split View Styles */
         #split-view-container {
             display: flex;
             width: 100vw;
@@ -380,34 +31,335 @@
 
         .app-container {
             flex: 1;
-            max-width: none;
-            margin: 0;
-            padding: 24px;
+            padding: 40px;
             overflow-y: auto;
-            transition: flex 0.3s ease;
+            scroll-behavior: smooth;
+        }
+
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 48px;
+            padding: 24px;
+            background: rgba(30, 30, 46, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .app-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #89b4fa, #b4befe);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 10px 16px;
+            gap: 10px;
+            width: 320px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .search-container:focus-within {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: #89b4fa;
+            box-shadow: 0 0 0 4px rgba(137, 180, 250, 0.15);
+            width: 360px;
+        }
+
+        .search-container input {
+            background: transparent;
+            border: none;
+            color: #cad3f5;
+            font-size: 15px;
+            font-weight: 500;
+            outline: none;
+            width: 100%;
+        }
+
+        .btn-new-note {
+            background: linear-gradient(135deg, #f9e2af 0%, #fab387 100%);
+            color: #11111b;
+            border: none;
+            padding: 0 28px;
+            border-radius: 18px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 20px rgba(249, 226, 175, 0.15);
+            height: 44px;
+        }
+
+        .btn-new-note:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(249, 226, 175, 0.25);
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 24px;
+            padding-bottom: 40px;
+        }
+
+        .note-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(4px);
+            border-radius: 20px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+            min-height: 180px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.5s ease-out backwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .note-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-tag {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 12px;
+            height: 12px;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .note-card:hover .color-tag {
+            transform: scale(1.2);
+        }
+
+        .note-card .title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 18px;
+            font-weight: 600;
+            color: #f5e0dc;
+            margin-bottom: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .note-card .preview {
+            font-size: 14px;
+            color: #a6adc8;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            flex: 1;
+        }
+
+        .note-card .timestamp {
+            font-size: 12px;
+            color: #6c7086;
+            font-weight: 500;
+        }
+
+        .note-card .delete-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            opacity: 0;
+            transition: all 0.2s;
+            background: rgba(243, 139, 168, 0.1);
+            border: 1px solid rgba(243, 139, 168, 0.2);
+            color: #f38ba8;
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .note-card:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .note-card .delete-btn:hover {
+            background: #f38ba8;
+            color: #11111b;
+        }
+
+        /* Selection mode */
+        .selection-mode .note-card {
+            border-color: rgba(137, 180, 250, 0.3);
+            background: rgba(137, 180, 250, 0.05);
+        }
+
+        .selection-mode .note-card:hover {
+            border-color: #89b4fa;
+            background: rgba(137, 180, 250, 0.08);
+        }
+
+        .selection-mode .note-card .title,
+        .selection-mode .note-card .preview,
+        .selection-mode .note-card .timestamp {
+            transform: translateX(36px);
+            transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .selection-checkbox {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            width: 24px;
+            height: 24px;
+            accent-color: #89b4fa;
+            cursor: pointer;
+            z-index: 5;
+            opacity: 0;
+            transform: scale(0.5);
+            pointer-events: none;
+            /* Block clicks only when visible */
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .selection-mode .selection-checkbox {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+        /* Sync Button Styling */
+        .btn-action,
+        .btn-danger,
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #a6adc8;
+            padding: 10px 20px;
+            border-radius: 16px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            height: 44px;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .btn-action.active {
+            background: rgba(137, 180, 250, 0.1);
+            color: #89b4fa;
+            border-color: #89b4fa;
+            box-shadow: 0 0 20px rgba(137, 180, 250, 0.1);
+        }
+
+        .btn-danger {
+            color: #f38ba8;
+            background: rgba(243, 139, 168, 0.05);
+            border-color: rgba(243, 139, 168, 0.1);
+            display: none;
+            /* Hidden by default */
+        }
+
+        .selection-mode .btn-danger {
+            display: flex;
+            animation: fadeInScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .btn-danger:hover {
+            background: rgba(243, 139, 168, 0.15);
+            border-color: #f38ba8;
+            transform: translateY(-2px);
+        }
+
+        .btn-action .icon,
+        .btn-danger .icon,
+        .btn-secondary .icon {
+            font-size: 16px;
+            margin-right: 2px;
+        }
+
+        .btn-secondary.synced {
+            background: rgba(166, 227, 161, 0.05);
+            border-color: rgba(166, 227, 161, 0.2);
+            color: #a6e3a1;
         }
 
         #note-side-panel {
             width: 50%;
             height: 100%;
-            background: var(--bg-primary);
-            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            background: #181926;
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
             display: flex;
             flex-direction: column;
-            transition: transform 0.3s ease, width 0.3s ease;
-            z-index: 100;
+            z-index: 1000;
+            transition: transform 0.3s ease;
         }
 
         #note-side-panel.hidden {
-            transform: translateX(100%);
-            width: 0;
             display: none;
-            /* fallback */
-        }
-
-        /* When side panel is open, we can use flex to share space */
-        #split-view-container:has(#note-side-panel:not(.hidden)) #note-side-panel {
-            display: flex;
         }
 
         .side-panel-header {
@@ -466,13 +418,13 @@
                         Markdown Notes
                     </h1>
                     <button id="btn-select-mode" class="btn-action">
-                        <span>✔️</span> 選択
+                        <span class="icon">✔️</span> 選択
                     </button>
                     <button id="btn-bulk-delete" class="btn-danger">
-                        <span>🗑️</span> 選択したノートを削除
+                        <span class="icon">🗑️</span> 選択したノートを削除
                     </button>
                     <div class="search-container">
-                        <span>🔍</span>
+                        <span class="icon">🔍</span>
                         <input type="text" id="search-input" placeholder="検索...">
                     </div>
                 </div>
@@ -486,7 +438,7 @@
                         </button>
                     </div>
                     <button class="btn-new-note" id="btn-new">
-                        <span>➕</span>
+                        <span class="icon">➕</span>
                         新規ノート
                     </button>
                 </div>

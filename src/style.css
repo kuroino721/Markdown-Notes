@@ -1,36 +1,37 @@
-/* Root variables */
+/* Root variables (Catppuccin Mocha based) */
 :root {
     --bg-primary: #1e1e2e;
-    --bg-secondary: #313244;
-    --bg-tertiary: #45475a;
+    --bg-secondary: #181825;
+    --bg-tertiary: #313244;
     --text-primary: #cdd6f4;
     --text-secondary: #a6adc8;
     --accent: #89b4fa;
     --accent-hover: #b4befe;
-    --border: #585b70;
+    --border: rgba(255, 255, 255, 0.08);
     --success: #a6e3a1;
     --warning: #f9e2af;
     --error: #f38ba8;
-    --editor-font: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-    --mono-font: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --rosewater: #f5e0dc;
+    --flamingo: #f2cdcd;
+    --editor-font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono-font: 'JetBrains Mono', 'Fira Code', monospace;
 
     /* Crepe / CodeMirror code-block variables */
-    --crepe-color-surface: var(--bg-secondary);
-    --crepe-color-surface-low: var(--bg-tertiary);
-    --crepe-color-on-surface: var(--text-primary);
-    --crepe-color-on-surface-variant: var(--text-secondary);
-    --crepe-color-primary: var(--accent);
-    --crepe-color-secondary: var(--bg-tertiary);
-    --crepe-color-outline: var(--border);
-    --crepe-color-hover: rgba(137, 180, 250, 0.12);
+    --crepe-color-surface: #11111b;
+    --crepe-color-surface-low: #181825;
+    --crepe-color-on-surface: #cdd6f4;
+    --crepe-color-on-surface-variant: #a6adc8;
+    --crepe-color-primary: #89b4fa;
     --crepe-font-default: var(--editor-font);
-    --crepe-shadow-1: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --crepe-shadow-1: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 html, body {

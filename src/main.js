@@ -34,7 +34,7 @@ async function renderNotes(filter = '') {
     // Sort by updated_at descending
     notes.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
 
-    grid.innerHTML = notes.map(note => {
+    grid.innerHTML = notes.map((note, index) => {
         // Format timestamp
         const date = new Date(note.updated_at);
         const timestamp = date.toLocaleDateString('ja-JP', {
@@ -48,9 +48,10 @@ async function renderNotes(filter = '') {
         const preview = getPreviewText(note.content);
 
         return `
-            <div class="note-card" data-id="${note.id}" data-color="${note.color}">
+            <div class="note-card" data-id="${note.id}" style="animation-delay: ${index * 0.05}s">
+                <div class="color-tag" style="background: ${note.color || '#89b4fa'}"></div>
                 <input type="checkbox" class="selection-checkbox" data-id="${note.id}">
-                <button class="delete-btn" data-id="${note.id}" title="削除">🗑️</button>
+                <button class="delete-btn" data-id="${note.id}" title="削除"><span class="icon">✕</span></button>
                 <div class="title">${escapeHtml(note.title)}</div>
                 <div class="preview">${escapeHtml(preview)}</div>
                 <div class="timestamp">${timestamp}</div>
@@ -289,7 +290,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnSelectMode.addEventListener('click', () => {
             const isSelectionMode = document.body.classList.toggle('selection-mode');
             btnSelectMode.classList.toggle('active', isSelectionMode);
-            btnBulkDelete.style.display = isSelectionMode ? 'flex' : 'none';
         });
     }
 
@@ -317,7 +317,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Exit selection mode
                     document.body.classList.remove('selection-mode');
                     btnSelectMode.classList.remove('active');
-                    btnBulkDelete.style.display = 'none';
                     
                     await renderNotes();
                 }

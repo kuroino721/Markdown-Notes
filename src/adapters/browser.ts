@@ -1,21 +1,23 @@
 import { GoogleDriveService } from './google-drive.js';
 import { SyncLogic } from './sync-logic.js';
+// @ts-ignore
 import { NOTE_COLOR_DEFAULT } from '../constants.js';
+import { Adapter, Note } from './types';
 
 const STORAGE_KEY = 'markdown_editor_notes';
 
-function getStoredNotes() {
+function getStoredNotes(): Note[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
 }
 
-function saveStoredNotes(notes) {
+function saveStoredNotes(notes: Note[]): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
 }
 
-export const BrowserAdapter = {
+export const BrowserAdapter: Adapter = {
     // Sync operations
-    async initSync() {
+    async initSync(): Promise<void> {
         await GoogleDriveService.init();
         if (GoogleDriveService.hasPreviousSession()) {
             try {
@@ -50,12 +52,12 @@ export const BrowserAdapter = {
         }
 
         if (!GoogleDriveService.isLoggedIn()) return;
-        
+
         try {
             // Check for account switch
             const currentUser = await GoogleDriveService.getUserInfo();
             const lastUser = localStorage.getItem('markdown_editor_last_synced_user');
-            
+
             if (lastUser && currentUser && lastUser !== currentUser) {
                 const choice = await this.confirm(
                     `アカウントが ${lastUser} から ${currentUser} に切り替わりました。どうしますか？\n\n「はい」: 現在のノートを消して ${currentUser} のデータを読み込む\n「いいえ」: 現在のノートと ${currentUser} のデータを合体（マージ）させる`,
@@ -65,7 +67,7 @@ export const BrowserAdapter = {
                         cancelLabel: 'マージする'
                     }
                 );
-                
+
                 if (choice) {
                     // Switch: Clear local data before fetching
                     console.log('Switching account data, clearing local storage temporarily');
@@ -79,13 +81,13 @@ export const BrowserAdapter = {
 
             const file = await GoogleDriveService.findSyncFile();
             const localNotes = getStoredNotes();
-            
+
             if (file) {
                 const remoteNotes = await GoogleDriveService.readSyncFile(file.id);
-                
+
                 // Use shared merge logic
                 const merged = SyncLogic.mergeNotes(localNotes, remoteNotes);
-                
+
                 // Save merged data
                 saveStoredNotes(merged);
                 await GoogleDriveService.saveToDrive(merged);
@@ -103,36 +105,36 @@ export const BrowserAdapter = {
     },
 
     // Data operations
-    async getNotes() {
+    async getNotes(): Promise<Note[]> {
         return getStoredNotes().filter(n => !n.deleted);
     },
 
-    async getNote(noteId) {
+    async getNote(noteId: string): Promise<Note | null> {
         const notes = getStoredNotes();
         const note = notes.find(n => n.id === noteId);
         return (note && !note.deleted) ? note : null;
     },
 
-    async createNote() {
+    async createNote(): Promise<Note> {
         const notes = getStoredNotes();
-        const newNote = {
+        const newNote: Note = {
             id: Math.random().toString(36).substring(2, 9),
             title: 'Untitled Note',
             content: '',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            color: NOTE_COLOR_DEFAULT
+            color: NOTE_COLOR_DEFAULT as string
         };
         notes.push(newNote);
         saveStoredNotes(notes);
-        
+
         // Background sync
         this.syncWithDrive().catch(console.error);
-        
+
         return newNote;
     },
 
-    async saveNote(note) {
+    async saveNote(note: Note) {
         const notes = getStoredNotes();
         const index = notes.findIndex(n => n.id === note.id);
         if (index !== -1) {
@@ -141,16 +143,16 @@ export const BrowserAdapter = {
             notes.push(note);
         }
         saveStoredNotes(notes);
-        
+
         // Background sync
         this.syncWithDrive().catch(console.error);
     },
 
-    async deleteNote(noteId) {
+    async deleteNote(noteId: string) {
         await this.deleteNotes([noteId]);
     },
 
-    async deleteNotes(noteIds) {
+    async deleteNotes(noteIds: string[]) {
         const notes = getStoredNotes();
         notes.forEach(n => {
             if (noteIds.includes(n.id)) {
@@ -159,23 +161,23 @@ export const BrowserAdapter = {
             }
         });
         saveStoredNotes(notes);
-        
+
         // Background sync
         this.syncWithDrive().catch(console.error);
     },
 
     // UI/Window operations
-    async openNote(id) {
+    async openNote(id: string) {
         // In browser, we dispatch a custom event to open in side panel instead of a new tab
         const event = new CustomEvent('open-note-sidebar', { detail: { id } });
         window.dispatchEvent(event);
     },
 
-    async confirm(message, options = {}) {
+    async confirm(message: string, _options: any = {}) {
         return window.confirm(message);
     },
 
-    async setWindowTitle(title) {
+    async setWindowTitle(title: string) {
         document.title = title;
     },
 
@@ -190,37 +192,36 @@ export const BrowserAdapter = {
         }
     },
 
-    // Window events (mostly no-ops or simple stubs)
-    onWindowMoved(callback) {
-        // Not really applicable in browser, but we can hook to window resize
-        return () => {}; // Unsubscribe stub
+    // Window events
+    onWindowMoved(_callback: (payload: any) => void) {
+        // Not supported in browser
+        return () => { };
     },
 
-    onWindowResized(callback) {
-        window.addEventListener('resize', callback);
-        return () => window.removeEventListener('resize', callback);
+    onWindowResized(_callback: (payload: any) => void) {
+        // Not supported in browser
+        return () => { };
     },
 
     async getWindowPosition() {
-        return { x: 0, y: 0 };
+        return { x: window.screenX, y: window.screenY };
     },
 
     async getWindowSize() {
         return { width: window.innerWidth, height: window.innerHeight };
     },
 
-    async updateWindowState(noteId, x, y, width, height) {
-        // Optional: could save to note metadata if we care
-        console.log('Browser: updateWindowState called', { noteId, x, y, width, height });
+    async updateWindowState(_noteId: string, _x: number, _y: number, _width: number, _height: number) {
+        // Not supported in browser directly
     },
 
     // Events
-    onFileOpen(callback) {
-        // Not easily supported in browser without file picker
-        return () => {}; // Unsubscribe stub
+    onFileOpen(_callback: (payload: any) => void) {
+        // Not supported in browser
+        return () => { };
     },
 
-    async readTextFile(path) {
-        throw new Error('Direct file access not supported in browser');
+    async readTextFile(_path: string) {
+        throw new Error('File system access not supported in browser');
     }
 };

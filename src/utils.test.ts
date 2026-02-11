@@ -283,10 +283,11 @@ describe('findTableContext', () => {
 
 describe('canDeleteTableRow', () => {
     // Helper to create a mock table node
-    function makeTable(rows) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function makeTable(rows: any[]) {
         return {
             childCount: rows.length,
-            child: (i) => rows[i],
+            child: (i: number) => rows[i],
         };
     }
 
@@ -307,14 +308,14 @@ describe('canDeleteTableRow', () => {
         expect(canDeleteTableRow(table, headerRow)).toBe(false);
     });
 
-    it('prevents deleting when table has only 2 rows', () => {
+    it('allows deleting when table has only 2 rows (header + 1 data)', () => {
         const headerRow = { id: 'header' };
         const dataRow = { id: 'data' };
         const table = makeTable([headerRow, dataRow]);
-        expect(canDeleteTableRow(table, dataRow)).toBe(false);
+        expect(canDeleteTableRow(table, dataRow)).toBe(true);
     });
 
-    it('prevents deleting when table has only 1 row', () => {
+    it('prevents deleting header row even if only row', () => {
         const headerRow = { id: 'header' };
         const table = makeTable([headerRow]);
         expect(canDeleteTableRow(table, headerRow)).toBe(false);

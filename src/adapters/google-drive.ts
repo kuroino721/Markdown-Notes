@@ -11,10 +11,21 @@ const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
 const SYNC_FILE_NAME = 'markdown_notes_sync.json';
 
-let tokenClient;
+// Global declarations for Google APIs
+declare global {
+    interface Window {
+        IS_TAURI_ADAPTER?: boolean;
+        __TAURI_INTERNALS__?: any;
+        __TAURI__?: any;
+    }
+}
+declare const gapi: any;
+declare const google: any;
+
+let tokenClient: any;
 let gapiInited = false;
 let gisInited = false;
-let pendingToken = null;
+let pendingToken: string | null = null;
 
 const isTauri = () => !!(window.IS_TAURI_ADAPTER || window.__TAURI_INTERNALS__ || window.__TAURI__);
 
@@ -22,18 +33,18 @@ export const GoogleDriveService = {
     /**
      * Parse token from URL hash if returning from redirect flow
      */
-    checkRedirectResponse() {
+    checkRedirectResponse(): boolean {
         const hash = window.location.hash;
         if (hash && (hash.includes('access_token=') || hash.includes('error='))) {
             const params = new URLSearchParams(hash.substring(1));
             const accessToken = params.get('access_token');
             const error = params.get('error');
-            
+
             if (accessToken) {
                 console.log('Detected access token in URL hash');
                 pendingToken = accessToken;
                 // Clear hash to avoid re-processing or leaking token
-                window.history.replaceState(null, null, window.location.pathname + window.location.search);
+                window.history.replaceState(null, '', window.location.pathname + window.location.search);
                 return true;
             }
             if (error) {
@@ -46,7 +57,7 @@ export const GoogleDriveService = {
     /**
      * Initialize Google APIs
      */
-    async init() {
+    async init(): Promise<void> {
         if (!CLIENT_ID || CLIENT_ID.includes('YOUR_CLIENT_ID')) {
             console.warn('Google Drive Client ID is not set. Please check your .env file.');
             return;
@@ -65,14 +76,14 @@ export const GoogleDriveService = {
                         apiKey: API_KEY,
                         discoveryDocs: [DISCOVERY_DOC],
                     });
-                    
+
                     if (pendingToken) {
                         console.log('[DEBUG] GoogleDriveService: Applying pending token from redirect');
                         gapi.client.setToken({ access_token: pendingToken });
                         pendingToken = null;
                         localStorage.setItem('markdown_editor_gdrive_enabled', 'true');
                     }
-                    
+
                     gapiInited = true;
                     console.log('[DEBUG] GoogleDriveService: GAPI inited');
                     checkInit();
@@ -125,7 +136,7 @@ export const GoogleDriveService = {
     /**
      * Sign in to Google
      */
-    async signIn(silent = false, loginHint = null) {
+    async signIn(silent = false, loginHint: string | null = null): Promise<any> {
         if (!gisInited || !tokenClient) {
             console.log('GIS not inited, attempting to re-init...');
             // In Tauri/Webview2, it's better to fail or wait if not inited 
@@ -148,11 +159,11 @@ export const GoogleDriveService = {
             const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(SCOPES)}&prompt=select_account`;
             console.log('[DEBUG] GoogleDriveService: Redirecting to:', authUrl);
             window.location.assign(authUrl);
-            return new Promise(() => {}); // Page will navigate
+            return new Promise(() => { }); // Page will navigate
         }
 
         return new Promise((resolve, reject) => {
-            tokenClient.callback = async (resp) => {
+            tokenClient.callback = async (resp: any) => {
                 console.log('Google Auth Response received:', resp);
                 if (resp.error !== undefined) {
                     console.error('Google Auth Error:', resp.error);
@@ -162,19 +173,19 @@ export const GoogleDriveService = {
                 resolve(resp);
             };
 
-            const options = {};
+            const options: any = {};
             if (silent) {
                 options.prompt = 'none';
                 if (loginHint) options.login_hint = loginHint;
             } else {
                 options.prompt = 'select_account';
             }
-            
+
             tokenClient.requestAccessToken(options);
         });
     },
 
-    signOut() {
+    signOut(): void {
         if (gapi.client) {
             const token = gapi.client.getToken();
             if (token !== null) {
@@ -185,14 +196,14 @@ export const GoogleDriveService = {
         localStorage.removeItem('markdown_editor_gdrive_enabled');
     },
 
-    hasPreviousSession() {
+    hasPreviousSession(): boolean {
         return localStorage.getItem('markdown_editor_gdrive_enabled') === 'true';
     },
 
     /**
      * Find the sync file on Google Drive
      */
-    async findSyncFile() {
+    async findSyncFile(): Promise<any> {
         console.log('[DEBUG] GoogleDriveService: findSyncFile() called');
         const response = await gapi.client.drive.files.list({
             q: `name = '${SYNC_FILE_NAME}' and trashed = false`,
@@ -207,7 +218,7 @@ export const GoogleDriveService = {
     /**
      * Get current user email
      */
-    async getUserInfo() {
+    async getUserInfo(): Promise<string | null> {
         if (!this.isLoggedIn()) return null;
         try {
             const response = await gapi.client.drive.about.get({
@@ -223,7 +234,7 @@ export const GoogleDriveService = {
     /**
      * Read content from the sync file
      */
-    async readSyncFile(fileId) {
+    async readSyncFile(fileId: string): Promise<any> {
         console.log(`[DEBUG] GoogleDriveService: readSyncFile(${fileId})`);
         const response = await gapi.client.drive.files.get({
             fileId: fileId,
@@ -236,7 +247,7 @@ export const GoogleDriveService = {
     /**
      * Create or update the sync file on Google Drive
      */
-    async saveToDrive(content) {
+    async saveToDrive(content: any): Promise<any> {
         console.log('[DEBUG] GoogleDriveService: saveToDrive()');
         const file = await this.findSyncFile();
         const metadata = {
@@ -271,7 +282,8 @@ export const GoogleDriveService = {
         }
     },
 
-    isLoggedIn() {
+    isLoggedIn(): boolean {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return typeof gapi !== 'undefined' && gapi.client && gapi.client.getToken() !== null;
     }
 };

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 
 export default defineConfig({
@@ -20,6 +20,10 @@ export default defineConfig({
     headers: {
       'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
     },
+  },
+  test: {
+    include: ['**/*.test.ts', '**/*.spec.ts'],
+    globals: true,
   },
 });
 

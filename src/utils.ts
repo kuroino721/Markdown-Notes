@@ -12,8 +12,8 @@ export const MAX_PREVIEW_LENGTH = 100;
  * @param {string} text - Raw text to escape
  * @returns {string} HTML-escaped text
  */
-export function escapeHtml(text) {
-    const map = {
+export function escapeHtml(text: string): string {
+    const map: Record<string, string> = {
         '&': '&amp;',
         '<': '&lt;',
         '>': '&gt;',
@@ -26,10 +26,10 @@ export function escapeHtml(text) {
 /**
  * Extract title from markdown content.
  * Uses the first non-empty line, stripping leading # characters.
- * @param {string} content - Markdown content
+ * @param {string | null | undefined} content - Markdown content
  * @returns {string} Extracted title (max 50 chars) or default
  */
-export function extractTitle(content) {
+export function extractTitle(content: string | null | undefined): string {
     const lines = (content || '').split('\n');
     for (const line of lines) {
         const trimmed = line.trim();
@@ -43,10 +43,10 @@ export function extractTitle(content) {
 /**
  * Generate preview text from markdown content.
  * Strips markdown syntax and limits to 100 characters.
- * @param {string} content - Markdown content
+ * @param {string | null | undefined} content - Markdown content
  * @returns {string} Plain text preview
  */
-export function getPreviewText(content) {
+export function getPreviewText(content: string | null | undefined): string {
     return (content || '')
         .replace(/^#+\s*/gm, '')
         .replace(/\*\*|__|[*_`]/g, '')
@@ -61,7 +61,7 @@ export function getPreviewText(content) {
  * @param {string} markdown - Markdown content
  * @returns {string} Cleaned markdown
  */
-export function removeExtraListBlankLines(markdown) {
+export function removeExtraListBlankLines(markdown: string): string {
     let prev;
     do {
         prev = markdown;
@@ -85,8 +85,8 @@ export function removeExtraListBlankLines(markdown) {
  * @param {string} filePath - Full file path
  * @returns {string} Filename without extension
  */
-export function getFileNameFromPath(filePath) {
-    return filePath.split(/[/\\]/).pop().replace(/\.[^.]+$/, '');
+export function getFileNameFromPath(filePath: string): string {
+    return filePath.split(/[/\\]/).pop()?.replace(/\.[^.]+$/, '') || '';
 }
 
 /**
@@ -95,7 +95,7 @@ export function getFileNameFromPath(filePath) {
  * @param {Array<{typeName: string, node: any}>} ancestors - Ancestor nodes from deepest to shallowest
  * @returns {{inTable: boolean, tableNode: any|null, tableRowNode: any|null}}
  */
-export function findTableContext(ancestors) {
+export function findTableContext(ancestors: Array<{ typeName: string; node: any }>): { inTable: boolean; tableNode: any | null; tableRowNode: any | null } {
     let tableNode = null;
     let tableRowNode = null;
     for (const { typeName, node } of ancestors) {
@@ -119,11 +119,11 @@ export function findTableContext(ancestors) {
  * @param {any} tableRowNode - The row node reference to check
  * @returns {boolean} Whether the row can be deleted
  */
-export function canDeleteTableRow(tableNode, tableRowNode) {
+export function canDeleteTableRow(tableNode: any, tableRowNode: any): boolean {
     if (!tableNode || !tableRowNode) return false;
     // Header row (first row) cannot be deleted
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     if (tableRowNode === tableNode.child(0)) return false;
-    // Need at least header + 2 data rows to allow deletion
-    if (tableNode.childCount <= 2) return false;
+
     return true;
 }

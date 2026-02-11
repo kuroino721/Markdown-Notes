@@ -2,11 +2,14 @@
  * Environment detection and adapter selector
  */
 
-export const isTauri = () => !!(window.__TAURI_INTERNALS__ || window.__TAURI__);
+import { Adapter } from './types.js';
 
-let adapter = null;
+// @ts-ignore
+export const isTauri = () => !!(window.IS_TAURI_ADAPTER || window.__TAURI_INTERNALS__ || window.__TAURI__);
 
-export async function getAdapter() {
+let adapter: Adapter | null = null;
+
+export async function getAdapter(): Promise<Adapter> {
     if (adapter) return adapter;
 
     if (isTauri()) {
@@ -17,6 +20,7 @@ export async function getAdapter() {
         adapter = BrowserAdapter;
     }
 
+    if (!adapter) throw new Error('Failed to load adapter');
     return adapter;
 }
 

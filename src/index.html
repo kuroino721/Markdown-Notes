@@ -217,6 +217,48 @@
             display: flex;
         }
 
+        .btn-action {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-action.active {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            transform: translateY(-1px);
+        }
+
         .notes-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -423,6 +465,12 @@
                         <span class="icon">📝</span>
                         Markdown Notes
                     </h1>
+                    <button id="btn-select-mode" class="btn-action">
+                        <span>✔️</span> 選択
+                    </button>
+                    <button id="btn-bulk-delete" class="btn-danger">
+                        <span>🗑️</span> 選択したノートを削除
+                    </button>
                     <div class="search-container">
                         <span>🔍</span>
                         <input type="text" id="search-input" placeholder="検索...">

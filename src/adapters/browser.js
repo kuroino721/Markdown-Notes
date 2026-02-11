@@ -78,30 +78,39 @@ export const BrowserAdapter = {
             }
 
             const file = await GoogleDriveService.findSyncFile();
+            const localNotes = getStoredNotes();
+            
             if (file) {
                 const remoteNotes = await GoogleDriveService.readSyncFile(file.id);
-                // Basic merge logic: remote wins for now, or we could do something more complex
-                const localNotes = getStoredNotes();
                 
-                // For simplicity, let's just use the one with later updated_at for each note
-                const merged = [...remoteNotes];
-                localNotes.forEach(localNote => {
-                    const existingIndex = merged.findIndex(n => n.id === localNote.id);
-                    if (existingIndex === -1) {
-                        merged.push(localNote);
+                // Merge Logic with Tombstones
+                const mergedMap = new Map();
+                
+                // 1. Put all local notes (including deleted ones) into map
+                localNotes.forEach(n => mergedMap.set(n.id, n));
+                
+                // 2. Merge remote notes
+                remoteNotes.forEach(remoteNote => {
+                    const localNote = mergedMap.get(remoteNote.id);
+                    if (!localNote) {
+                        // Brand new from remote
+                        mergedMap.set(remoteNote.id, remoteNote);
                     } else {
-                        const remoteNote = merged[existingIndex];
-                        if (new Date(localNote.updated_at) > new Date(remoteNote.updated_at)) {
-                            merged[existingIndex] = localNote;
+                        // Conflict resolution based on updated_at
+                        if (new Date(remoteNote.updated_at) > new Date(localNote.updated_at)) {
+                            // Remote is newer
+                            mergedMap.set(remoteNote.id, remoteNote);
                         }
                     }
                 });
                 
+                const merged = Array.from(mergedMap.values());
+                
+                // 3. Save merged data
                 saveStoredNotes(merged);
                 await GoogleDriveService.saveToDrive(merged);
             } else {
                 // First time sync, upload local notes
-                const localNotes = getStoredNotes();
                 await GoogleDriveService.saveToDrive(localNotes);
             }
         } catch (error) {
@@ -116,12 +125,13 @@ export const BrowserAdapter = {
 
     // Data operations
     async getNotes() {
-        return getStoredNotes();
+        return getStoredNotes().filter(n => !n.deleted);
     },
 
     async getNote(noteId) {
         const notes = getStoredNotes();
-        return notes.find(n => n.id === noteId);
+        const note = notes.find(n => n.id === noteId);
+        return (note && !note.deleted) ? note : null;
     },
 
     async createNote() {
@@ -147,7 +157,7 @@ export const BrowserAdapter = {
         const notes = getStoredNotes();
         const index = notes.findIndex(n => n.id === note.id);
         if (index !== -1) {
-            notes[index] = { ...note, updated_at: new Date().toISOString() };
+            notes[index] = { ...note, updated_at: new Date().toISOString(), deleted: false };
         } else {
             notes.push(note);
         }
@@ -158,9 +168,18 @@ export const BrowserAdapter = {
     },
 
     async deleteNote(noteId) {
+        await this.deleteNotes([noteId]);
+    },
+
+    async deleteNotes(noteIds) {
         const notes = getStoredNotes();
-        const filtered = notes.filter(n => n.id !== noteId);
-        saveStoredNotes(filtered);
+        notes.forEach(n => {
+            if (noteIds.includes(n.id)) {
+                n.deleted = true;
+                n.updated_at = new Date().toISOString();
+            }
+        });
+        saveStoredNotes(notes);
         
         // Background sync
         this.syncWithDrive().catch(console.error);

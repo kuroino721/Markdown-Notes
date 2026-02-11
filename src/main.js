@@ -49,6 +49,7 @@ async function renderNotes(filter = '') {
 
         return `
             <div class="note-card" data-id="${note.id}" data-color="${note.color}">
+                <input type="checkbox" class="selection-checkbox" data-id="${note.id}">
                 <button class="delete-btn" data-id="${note.id}" title="削除">🗑️</button>
                 <div class="title">${escapeHtml(note.title)}</div>
                 <div class="preview">${escapeHtml(preview)}</div>
@@ -61,6 +62,14 @@ async function renderNotes(filter = '') {
     grid.querySelectorAll('.note-card').forEach(card => {
         card.addEventListener('click', (e) => {
             if (e.target.classList.contains('delete-btn')) return;
+            if (e.target.classList.contains('selection-checkbox')) return;
+
+            if (document.body.classList.contains('selection-mode')) {
+                const checkbox = card.querySelector('.selection-checkbox');
+                checkbox.checked = !checkbox.checked;
+                return;
+            }
+
             const noteId = card.dataset.id;
             openNoteWindow(noteId);
         });
@@ -270,6 +279,50 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (iconSpan) iconSpan.textContent = '🔄';
             if (labelSpan) labelSpan.textContent = 'G-Drive 同期';
         }
+    }
+
+    // Selection mode
+    const btnSelectMode = document.getElementById('btn-select-mode');
+    const btnBulkDelete = document.getElementById('btn-bulk-delete');
+
+    if (btnSelectMode) {
+        btnSelectMode.addEventListener('click', () => {
+            const isSelectionMode = document.body.classList.toggle('selection-mode');
+            btnSelectMode.classList.toggle('active', isSelectionMode);
+            btnBulkDelete.style.display = isSelectionMode ? 'flex' : 'none';
+        });
+    }
+
+    if (btnBulkDelete) {
+        btnBulkDelete.addEventListener('click', async () => {
+            const checkedBoxes = document.querySelectorAll('.selection-checkbox:checked');
+            const ids = Array.from(checkedBoxes).map(cb => cb.dataset.id);
+
+            if (ids.length === 0) {
+                alert('削除するノートを選択してください。');
+                return;
+            }
+
+            const confirmed = await adapter.confirm(`${ids.length} 件のノートを削除しますか？`, {
+                title: '一括削除の確認',
+                kind: 'warning',
+                okLabel: '削除',
+                cancelLabel: 'キャンセル'
+            });
+
+            if (confirmed) {
+                if (adapter.deleteNotes) {
+                    await adapter.deleteNotes(ids);
+                    
+                    // Exit selection mode
+                    document.body.classList.remove('selection-mode');
+                    btnSelectMode.classList.remove('active');
+                    btnBulkDelete.style.display = 'none';
+                    
+                    await renderNotes();
+                }
+            }
+        });
     }
 
     // Refresh notes when window gains focus

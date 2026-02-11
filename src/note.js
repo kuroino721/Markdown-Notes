@@ -9,6 +9,7 @@ import { setupTableAutoComplete } from './table-utils.js';
 import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import { insertHardbreakCommand } from '@milkdown/preset-commonmark';
 import { callCommand } from '@milkdown/utils';
+import { remarkStringifyOptionsCtx } from '@milkdown/core';
 import { 
     AUTO_SAVE_DELAY_MS, 
     STORAGE_KEY_LINE_HEIGHT,
@@ -68,7 +69,7 @@ async function initEditor(content) {
             },
         });
         
-        // Configure listener to intercept Enter
+        // Configure listener to intercept Enter and customize serialization
         crepeInstance.editor
             .config((ctx) => {
                 ctx.get(listenerCtx).keydown = (ctx, event) => {
@@ -78,6 +79,15 @@ async function initEditor(content) {
                         return true;
                     }
                 };
+
+                // Override hard_break serialization to use backslash instead of spaces
+                ctx.update(remarkStringifyOptionsCtx, (prev) => ({
+                    ...prev,
+                    handlers: {
+                        ...(prev.handlers || {}),
+                        break: () => '\\\n',
+                    },
+                }));
             })
             .use(listener);
 

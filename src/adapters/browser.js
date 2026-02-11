@@ -1,4 +1,5 @@
 import { GoogleDriveService } from './google-drive.js';
+import { SyncLogic } from './sync-logic.js';
 import { NOTE_COLOR_DEFAULT } from '../constants.js';
 
 const STORAGE_KEY = 'markdown_editor_notes';
@@ -41,7 +42,6 @@ export const BrowserAdapter = {
         await GoogleDriveService.signIn();
         await this.syncWithDrive();
     },
-
     async syncWithDrive() {
         // If in an iframe (sidebar), delegate sync to parent window
         if (window.self !== window.top) {
@@ -83,30 +83,10 @@ export const BrowserAdapter = {
             if (file) {
                 const remoteNotes = await GoogleDriveService.readSyncFile(file.id);
                 
-                // Merge Logic with Tombstones
-                const mergedMap = new Map();
+                // Use shared merge logic
+                const merged = SyncLogic.mergeNotes(localNotes, remoteNotes);
                 
-                // 1. Put all local notes (including deleted ones) into map
-                localNotes.forEach(n => mergedMap.set(n.id, n));
-                
-                // 2. Merge remote notes
-                remoteNotes.forEach(remoteNote => {
-                    const localNote = mergedMap.get(remoteNote.id);
-                    if (!localNote) {
-                        // Brand new from remote
-                        mergedMap.set(remoteNote.id, remoteNote);
-                    } else {
-                        // Conflict resolution based on updated_at
-                        if (new Date(remoteNote.updated_at) > new Date(localNote.updated_at)) {
-                            // Remote is newer
-                            mergedMap.set(remoteNote.id, remoteNote);
-                        }
-                    }
-                });
-                
-                const merged = Array.from(mergedMap.values());
-                
-                // 3. Save merged data
+                // Save merged data
                 saveStoredNotes(merged);
                 await GoogleDriveService.saveToDrive(merged);
             } else {
@@ -118,7 +98,6 @@ export const BrowserAdapter = {
             throw error;
         }
     },
-
     isSyncEnabled() {
         return GoogleDriveService.isLoggedIn();
     },

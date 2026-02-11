@@ -14,8 +14,35 @@ const SYNC_FILE_NAME = 'markdown_notes_sync.json';
 let tokenClient;
 let gapiInited = false;
 let gisInited = false;
+let pendingToken = null;
+
+const isTauri = () => !!(window.IS_TAURI_ADAPTER || window.__TAURI_INTERNALS__ || window.__TAURI__);
 
 export const GoogleDriveService = {
+    /**
+     * Parse token from URL hash if returning from redirect flow
+     */
+    checkRedirectResponse() {
+        const hash = window.location.hash;
+        if (hash && (hash.includes('access_token=') || hash.includes('error='))) {
+            const params = new URLSearchParams(hash.substring(1));
+            const accessToken = params.get('access_token');
+            const error = params.get('error');
+            
+            if (accessToken) {
+                console.log('Detected access token in URL hash');
+                pendingToken = accessToken;
+                // Clear hash to avoid re-processing or leaking token
+                window.history.replaceState(null, null, window.location.pathname + window.location.search);
+                return true;
+            }
+            if (error) {
+                console.error('OAuth redirect error:', error);
+            }
+        }
+        return false;
+    },
+
     /**
      * Initialize Google APIs
      */
@@ -38,6 +65,13 @@ export const GoogleDriveService = {
                         apiKey: API_KEY,
                         discoveryDocs: [DISCOVERY_DOC],
                     });
+                    
+                    if (pendingToken) {
+                        gapi.client.setToken({ access_token: pendingToken });
+                        pendingToken = null;
+                        localStorage.setItem('markdown_editor_gdrive_enabled', 'true');
+                    }
+                    
                     gapiInited = true;
                     checkInit();
                 } catch (e) {
@@ -63,6 +97,7 @@ export const GoogleDriveService = {
 
             const pollScripts = setInterval(() => {
                 if (typeof gapi !== 'undefined' && gapi.load && !gapiInited) {
+                    this.checkRedirectResponse();
                     gapi.load('client', initGapi);
                 }
                 if (typeof google !== 'undefined' && google.accounts && !gisInited) {
@@ -91,11 +126,26 @@ export const GoogleDriveService = {
     async signIn(silent = false, loginHint = null) {
         if (!gisInited || !tokenClient) {
             console.log('GIS not inited, attempting to re-init...');
-            await this.init();
+            // In Tauri/Webview2, it's better to fail or wait if not inited 
+            // than to await init() here which breaks the user gesture.
+            if (!gapiInited || !gisInited) {
+                // If not inited background, we might want to try one last time
+                // but only if we haven't already.
+                await this.init();
+            }
         }
 
-        if (!tokenClient) {
+        if (!tokenClient && !isTauri()) {
             throw new Error('Google Drive client (GIS) failed to initialize.');
+        }
+
+        // Use Redirect Flow for Tauri to avoid popup blocking
+        if (isTauri() && !silent) {
+            console.log('Using Redirect Flow for Tauri');
+            const redirectUri = window.location.origin + '/';
+            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent(SCOPES)}&prompt=select_account`;
+            window.location.assign(authUrl);
+            return new Promise(() => {}); // Page will navigate
         }
 
         return new Promise((resolve, reject) => {

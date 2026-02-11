@@ -31,8 +31,16 @@ pub struct Note {
     pub content: String,
     pub created_at: String,
     pub updated_at: String,
+    #[serde(default)]
     pub window_state: WindowState,
+    #[serde(default = "default_color")]
     pub color: String,
+    #[serde(default)]
+    pub deleted: bool,
+}
+
+fn default_color() -> String {
+    "#fef3c7".to_string()
 }
 
 impl Note {
@@ -46,6 +54,7 @@ impl Note {
             updated_at: now,
             window_state: WindowState::default(),
             color: String::from("#fef3c7"), // Warm yellow like sticky note
+            deleted: false,
         }
     }
 }
@@ -192,6 +201,7 @@ mod tests {
             updated_at: "2026-01-01T00:00:00+00:00".to_string(),
             window_state: WindowState::default(),
             color: "#fef3c7".to_string(),
+            deleted: false,
         }
     }
 
@@ -306,6 +316,25 @@ mod tests {
         assert!(json.contains("\"updated_at\":"));
         assert!(json.contains("\"window_state\":"));
         assert!(json.contains("\"color\":\"#fef3c7\""));
+        assert!(json.contains("\"deleted\":false"));
+    }
+
+    #[test]
+    fn test_note_deserialization_with_missing_fields() {
+        let json = r#"{
+            "id": "test-uuid",
+            "title": "Minimal Note",
+            "content": "Hello",
+            "created_at": "2026-01-01T00:00:00Z",
+            "updated_at": "2026-01-01T00:00:00Z"
+        }"#;
+
+        let note: Note = serde_json::from_str(json).unwrap();
+
+        assert_eq!(note.id, "test-uuid");
+        assert_eq!(note.window_state.x, 100); // Default from WindowState::default()
+        assert_eq!(note.color, "#fef3c7"); // Default from default_color()
+        assert_eq!(note.deleted, false); // Default from bool default
     }
 
     #[test]

@@ -60,6 +60,13 @@ fn delete_note(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn save_all_notes(app: tauri::AppHandle, notes: Vec<Note>) -> Result<(), String> {
+    let mut store = NotesStore::load(&app);
+    store.notes = notes;
+    store.save(&app)
+}
+
+#[tauri::command]
 fn update_window_state(
     app: tauri::AppHandle,
     note_id: String,
@@ -164,6 +171,7 @@ pub fn run() {
             delete_note,
             update_window_state,
             open_note_window,
+            save_all_notes,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

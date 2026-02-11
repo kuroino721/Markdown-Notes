@@ -190,20 +190,26 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('close-side-panel').click();
     } else if (e.data.type === 'request-sync') {
         console.log('Sync requested from iframe');
-        const adapter = await getAdapter();
-        if (adapter.syncWithDrive) {
-            adapter.syncWithDrive().catch(console.error);
-        }
+        triggerSync();
     }
 });
 
-    // Initialize sync if available
-    if (adapter.initSync) {
-        try {
-            await adapter.initSync();
-            await updateSyncStatus();
-        } catch (e) {
-            console.error('Failed to init sync:', e);
+    // Tauri-specific event listener for sync requests from separate windows
+    if (adapter.onWindowMoved) { // Rough check for Tauri
+        adapter.onFileOpen((payload) => { /* already handled by adapter.onFileOpen */ });
+        // Use Tauri's listen directly for request-sync if available
+        import('@tauri-apps/api/event').then(({ listen }) => {
+            listen('request-sync', () => {
+                console.log('Sync requested from Tauri sub-window');
+                triggerSync();
+            });
+        }).catch(() => {});
+    }
+
+    async function triggerSync() {
+        const adapter = await getAdapter();
+        if (adapter.syncWithDrive) {
+            adapter.syncWithDrive().catch(console.error);
         }
     }
 
@@ -250,6 +256,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         });
+    }
+
+    // Initialize sync if available (Non-blocking)
+    if (adapter.initSync) {
+        (async () => {
+            try {
+                await adapter.initSync();
+                await updateSyncStatus();
+            } catch (e) {
+                console.error('Failed to init sync:', e);
+            }
+        })();
     }
 
     async function updateSyncStatus() {

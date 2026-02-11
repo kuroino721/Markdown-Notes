@@ -67,8 +67,12 @@ impl NotesStore {
 
     pub fn load(app: &tauri::AppHandle) -> Self {
         let path = Self::get_store_path(app);
+        Self::load_from_path(&path)
+    }
+
+    pub fn load_from_path(path: &PathBuf) -> Self {
         if path.exists() {
-            let content = fs::read_to_string(&path).unwrap_or_default();
+            let content = fs::read_to_string(path).unwrap_or_default();
             serde_json::from_str(&content).unwrap_or_default()
         } else {
             Self::default()
@@ -77,8 +81,12 @@ impl NotesStore {
 
     pub fn save(&self, app: &tauri::AppHandle) -> Result<(), String> {
         let path = Self::get_store_path(app);
+        self.save_to_path(&path)
+    }
+
+    pub fn save_to_path(&self, path: &PathBuf) -> Result<(), String> {
         let content = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
-        fs::write(&path, content).map_err(|e| e.to_string())
+        fs::write(path, content).map_err(|e| e.to_string())
     }
 
     pub fn add_note(&mut self, note: Note) {

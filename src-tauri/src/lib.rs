@@ -1,4 +1,4 @@
-mod notes;
+pub mod notes;
 
 use notes::{Note, NotesStore};
 use tauri::image::Image;

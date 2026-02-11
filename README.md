@@ -46,24 +46,35 @@ npm install
 npm run tauri dev
 ```
 
-## 単体テストの実行
+## テストの実行
 
-### フロントエンド
+### unit test
 
-Vitest を使用して `src/utils.js` などのユーティリティ関数のテストを実行します。
+    ### フロントエンド
 
-```powershell
-npm run test
-```
+    Vitest を使用して `src/utils.js` などのユーティリティ関数のテストを実行します。
 
-### バックエンド
+    ```powershell
+    npm run test
+    ```
 
-`src-tauri` ディレクトリ内の Rust コードのテストを実行します。
+    ### バックエンド
 
-```powershell
-cd src-tauri
-cargo test
-```
+    `src-tauri` ディレクトリ内の Rust コードのテストを実行します。
+
+    ```powershell
+    cd src-tauri
+    cargo test
+    ```
+
+### integration test
+
+    `src-tauri` ディレクトリ内の Rust コードのテストを実行します。
+
+    ```powershell
+    cd src-tauri
+    cargo test --test integration_tests
+    ```
 
 ## ビルド
 

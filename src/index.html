@@ -193,17 +193,99 @@
         }
 
         .note-card .preview {
-            font-size: 14px;
+            font-size: 13px;
             color: #a6adc8;
-            line-height: 1.6;
-            margin-bottom: 30px;
+            line-height: 1.5;
+            margin-bottom: 12px;
             flex: 1;
+            overflow: hidden;
+            position: relative;
+            max-height: 120px;
+            /* Limit height */
+            /* Vertical mask for overflow */
+            -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+            mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+        }
+
+        /* Rendered Markdown Styles in Card */
+        .markdown-body {
+            word-break: break-all;
+        }
+
+        .markdown-body h1,
+        .markdown-body h2,
+        .markdown-body h3,
+        .markdown-body h4,
+        .markdown-body h5,
+        .markdown-body h6 {
+            font-size: 1.05em;
+            margin: 0.6em 0 0.3em;
+            color: #f5e0dc;
+            line-height: 1.2;
+        }
+
+        .markdown-body p {
+            margin-bottom: 0.4em;
+        }
+
+        .markdown-body ul,
+        .markdown-body ol {
+            padding-left: 1.2em;
+            margin: 0.3em 0;
+        }
+
+        .markdown-body li {
+            margin-bottom: 0.2em;
+        }
+
+        .markdown-body code {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 1px 4px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9em;
+        }
+
+        .markdown-body pre {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px;
+            border-radius: 8px;
+            margin: 0.5em 0;
+            overflow-x: auto;
+        }
+
+        .markdown-body blockquote {
+            border-left: 3px solid rgba(255, 255, 255, 0.1);
+            padding-left: 10px;
+            margin-left: 0;
+            margin-right: 0;
+            color: #9399b2;
+            font-style: italic;
+        }
+
+        .markdown-body table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 0.5em 0;
+        }
+
+        .markdown-body th,
+        .markdown-body td {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 4px 8px;
+            text-align: left;
+        }
+
+        .markdown-body th {
+            background: rgba(255, 255, 255, 0.05);
+            font-weight: 600;
         }
 
         .note-card .timestamp {
-            font-size: 12px;
+            font-size: 11px;
             color: #6c7086;
             font-weight: 500;
+            margin-top: auto;
         }
 
         .note-card .delete-btn {

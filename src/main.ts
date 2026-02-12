@@ -1,5 +1,5 @@
 import { getAdapter } from './adapters/index.js';
-import { escapeHtml, getPreviewText, getFileNameFromPath } from './utils.js';
+import { escapeHtml, renderMarkdown, getFileNameFromPath } from './utils.js';
 import { Adapter } from './adapters/types';
 
 let adapter: Adapter | null = null;
@@ -44,8 +44,9 @@ async function renderNotes(filter = '') {
             minute: '2-digit'
         });
 
-        // Get preview text (first 100 chars, strip markdown)
-        const preview = getPreviewText(note.content);
+        // Use renderMarkdown for preview (truncate to 200 chars for performance/size)
+        const previewContent = note.content.substring(0, 500);
+        const previewHtml = renderMarkdown(previewContent);
 
         return `
             <div class="note-card" data-id="${note.id}" style="animation-delay: ${index * 0.05}s">
@@ -53,7 +54,7 @@ async function renderNotes(filter = '') {
                 <input type="checkbox" class="selection-checkbox" data-id="${note.id}">
                 <button class="delete-btn" data-id="${note.id}" title="削除"><span class="icon">✕</span></button>
                 <div class="title">${escapeHtml(note.title)}</div>
-                <div class="preview">${escapeHtml(preview)}</div>
+                <div class="preview markdown-body">${previewHtml}</div>
                 <div class="timestamp">${timestamp}</div>
             </div>
         `;

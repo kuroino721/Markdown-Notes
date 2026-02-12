@@ -1,3 +1,5 @@
+import { marked } from 'marked';
+
 /**
  * Utility functions for Markdown Editor
  * Pure functions extracted for testability
@@ -6,6 +8,16 @@
 export const DEFAULT_TITLE = '新しいノート';
 export const MAX_TITLE_LENGTH = 50;
 export const MAX_PREVIEW_LENGTH = 100;
+
+/**
+ * Render markdown to HTML.
+ * @param {string} content - Markdown content
+ * @returns {string} Rendered HTML
+ */
+export function renderMarkdown(content: string): string {
+    if (!content) return '';
+    return marked.parse(content) as string;
+}
 
 /**
  * Escape HTML special characters to prevent XSS

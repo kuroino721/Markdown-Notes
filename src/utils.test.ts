@@ -3,6 +3,7 @@ import {
     escapeHtml,
     extractTitle,
     getPreviewText,
+    renderMarkdown,
     removeExtraListBlankLines,
     getFileNameFromPath,
     findTableContext,
@@ -136,7 +137,29 @@ describe('getPreviewText', () => {
     });
 });
 
-// ── removeExtraListBlankLines ──────────────────────────
+// ── renderMarkdown ─────────────────────────────────────
+describe('renderMarkdown', () => {
+    it('renders basic markdown to HTML', () => {
+        const result = renderMarkdown('# Hello\n**bold**');
+        expect(result).toContain('<h1>Hello</h1>');
+        expect(result).toContain('<strong>bold</strong>');
+    });
+
+    it('renders lists', () => {
+        const result = renderMarkdown('- item 1\n- item 2');
+        expect(result).toContain('<ul>');
+        expect(result).toContain('<li>item 1</li>');
+    });
+
+    it('handles empty content', () => {
+        expect(renderMarkdown('')).toBe('');
+    });
+
+    it('handles null content (via type coercion or if passed indirectly)', () => {
+        // @ts-ignore
+        expect(renderMarkdown(null)).toBe('');
+    });
+});
 
 describe('removeExtraListBlankLines', () => {
     it('removes blank lines between unordered list items', () => {

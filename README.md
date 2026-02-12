@@ -1,12 +1,12 @@
 # Markdown Notes
 
-TauriとMilkdownで構築された、マルチウィンドウ対応のMarkdownメモ帳アプリです。
-各ノートを独立したウィンドウ（付箋のような感覚）として開くことができ、メインウィンドウで一元管理できます。
+TauriとMilkdownで構築された、マルチウィンドウ対応のMarkdownメモ帳アプリです。各ノートを独立したウィンドウ（付箋のような感覚）として開くことができ、メインウィンドウで一元管理できます。
 
 ## 特徴
 
 - **マルチウィンドウ**: 複数のノートを同時に独立したウィンドウとして開くことができます。
-- **WYSIWYG編集**: Milkdown (Crepe) を採用し、Typoraライクな直感的なMarkdown編集が可能です。
+- **WYSIWYG編集**: Milkdown
+  (Crepe) を採用し、Typoraライクな直感的なMarkdown編集が可能です。
 - **ソースモード**: WYSIWYGと生のMarkdown表示をワンクリックで切り替えられます。
 - **自動保存**: 内容は自動的に保存され、ウィンドウの位置やサイズも記憶されます。
 - **ダッシュボード**: 作成したノートを一覧表示し、管理（作成・削除・検索）できます。
@@ -15,12 +15,12 @@ TauriとMilkdownで構築された、マルチウィンドウ対応のMarkdown�
 
 ## 技術スタック
 
-| 領域 | 技術 |
-|------|------|
-| フロントエンド | Vanilla JavaScript, HTML, CSS |
-| エディタコア | [Milkdown](https://milkdown.dev/) (Crepe) |
-| バックエンド | Rust (Tauri) |
-| ビルドツール | Vite |
+| 領域           | 技術                                      |
+| -------------- | ----------------------------------------- |
+| フロントエンド | Vanilla JavaScript, HTML, CSS             |
+| エディタコア   | [Milkdown](https://milkdown.dev/) (Crepe) |
+| バックエンド   | Rust (Tauri)                              |
+| ビルドツール   | Vite                                      |
 
 ## プロジェクト構成
 
@@ -40,10 +40,10 @@ src/
 
 ```powershell
 # 依存関係のインストール
-npm install
+pnpm install
 
 # 開発サーバーの起動（ホットリロード有効）
-npm run tauri dev
+pnpm tauri dev
 ```
 
 ## テストの実行
@@ -55,7 +55,7 @@ npm run tauri dev
     Vitest を使用して `src/utils.js` などのユーティリティ関数のテストを実行します。
 
     ```powershell
-    npm run test
+    pnpm test
     ```
 
     ### バックエンド
@@ -81,7 +81,7 @@ npm run tauri dev
 配布用のインストーラを作成するには：
 
 ```powershell
-npm run tauri build
+pnpm tauri build
 ```
 
 ### インストーラ
@@ -91,26 +91,28 @@ npm run tauri build
 ## 実装済み機能
 
 ### 1. ライブプレビュー
+
 - Split View（左:エディタ、右:プレビュー）
 - 入力と同時にプレビュー更新
 - 対応Markdown: 見出し、太字、斜体、リスト、コードブロック、リンク
 
 ### 2. キーボードショートカット（Typora互換）
 
-| キー | 機能 |
-|------|------|
-| `Ctrl+/` | 表示モード切替 |
-| `Ctrl+B` | 太字挿入 |
-| `Ctrl+I` | 斜体挿入 |
-| `Ctrl+K` | リンク挿入 |
-| `Ctrl+S` | 保存 |
-| `Ctrl+O` | ファイルを開く |
-| `Ctrl+1~6` | 見出しレベル |
+| キー       | 機能           |
+| ---------- | -------------- |
+| `Ctrl+/`   | 表示モード切替 |
+| `Ctrl+B`   | 太字挿入       |
+| `Ctrl+I`   | 斜体挿入       |
+| `Ctrl+K`   | リンク挿入     |
+| `Ctrl+S`   | 保存           |
+| `Ctrl+O`   | ファイルを開く |
+| `Ctrl+1~6` | 見出しレベル   |
 
 ### 3. ファイル操作
+
 - 開く/保存/名前を付けて保存
 - .md, .txt ファイル対応
-- 変更検知（タイトルに * 表示）
+- 変更検知（タイトルに \* 表示）
 
 ## 今後の改善点
 
@@ -126,15 +128,18 @@ npm run tauri build
 ## コード解説
 
 ### app.rs
+
 - `MarkdownApp` 構造体がアプリ状態を保持
 - `ViewMode` enum で表示モード（Split/Editor/Preview）を管理
 - `eframe::App` trait の `update()` で毎フレームUIを描画
 
 ### preview.rs
+
 - `pulldown_cmark::Parser` でMarkdownをパース
 - イベント駆動でタグを処理し、`egui::RichText` で描画
 - 見出しはサイズ変更、コードブロックは背景色付き
 
 ### shortcuts.rs
+
 - `ctx.input()` でキー入力を検知
 - Modifiers（Ctrl）との組み合わせで処理を分岐

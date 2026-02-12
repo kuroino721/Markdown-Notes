@@ -15,7 +15,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@tauri-apps/cli": "^2.9.6",
+    "@tauri-apps/cli": "^2.0.0",
     "@types/node": "^25.2.3",
     "jimp": "^1.6.0",
     "typescript": "^5.9.3",
@@ -29,7 +29,7 @@
     "@milkdown/kit": "^7.18.0",
     "@milkdown/prose": "^7.18.0",
     "@milkdown/theme-nord": "^7.18.0",
-    "@tauri-apps/api": "^2.9.1",
+    "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.6.0",
     "@tauri-apps/plugin-fs": "^2.4.5",
     "firebase": "^12.9.0"

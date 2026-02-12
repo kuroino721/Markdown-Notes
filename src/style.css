@@ -1,149 +1,151 @@
 /* Root variables (Catppuccin Mocha based) */
 :root {
-    --bg-primary: #1e1e2e;
-    --bg-secondary: #181825;
-    --bg-tertiary: #313244;
-    --text-primary: #cdd6f4;
-    --text-secondary: #a6adc8;
-    --accent: #89b4fa;
-    --accent-hover: #b4befe;
-    --border: rgba(255, 255, 255, 0.08);
-    --success: #a6e3a1;
-    --warning: #f9e2af;
-    --error: #f38ba8;
-    --rosewater: #f5e0dc;
-    --flamingo: #f2cdcd;
-    --editor-font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --mono-font: 'JetBrains Mono', 'Fira Code', monospace;
+  --bg-primary: #1e1e2e;
+  --bg-secondary: #181825;
+  --bg-tertiary: #313244;
+  --text-primary: #cdd6f4;
+  --text-secondary: #a6adc8;
+  --accent: #89b4fa;
+  --accent-hover: #b4befe;
+  --border: rgba(255, 255, 255, 0.08);
+  --success: #a6e3a1;
+  --warning: #f9e2af;
+  --error: #f38ba8;
+  --rosewater: #f5e0dc;
+  --flamingo: #f2cdcd;
+  --editor-font:
+    "Inter", "Noto Sans JP", -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono-font: "JetBrains Mono", "Fira Code", monospace;
 
-    /* Crepe / CodeMirror code-block variables */
-    --crepe-color-surface: #11111b;
-    --crepe-color-surface-low: #181825;
-    --crepe-color-on-surface: #cdd6f4;
-    --crepe-color-on-surface-variant: #a6adc8;
-    --crepe-color-primary: #89b4fa;
-    --crepe-font-default: var(--editor-font);
-    --crepe-shadow-1: 0 10px 30px rgba(0, 0, 0, 0.4);
+  /* Crepe / CodeMirror code-block variables */
+  --crepe-color-surface: #11111b;
+  --crepe-color-surface-low: #181825;
+  --crepe-color-on-surface: #cdd6f4;
+  --crepe-color-on-surface-variant: #a6adc8;
+  --crepe-color-primary: #89b4fa;
+  --crepe-font-default: var(--editor-font);
+  --crepe-shadow-1: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-html, body {
-    height: 100%;
-    overflow: hidden;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    font-family: var(--editor-font);
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--editor-font);
 }
 
 .app-container {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
 }
 
 /* Toolbar */
 .toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 16px;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border);
-    user-select: none;
-    -webkit-user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .toolbar-left,
 .toolbar-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .toolbar-center {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 14px;
-    color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-secondary);
 }
 
 #modified-indicator {
-    color: var(--warning);
-    font-weight: bold;
+  color: var(--warning);
+  font-weight: bold;
 }
 
 #modified-indicator.hidden {
-    display: none;
+  display: none;
 }
 
 .toolbar button {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: inherit;
-    font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  font-size: 13px;
 }
 
 .toolbar button:hover {
-    background: var(--accent);
-    color: var(--bg-primary);
-    border-color: var(--accent);
+  background: var(--accent);
+  color: var(--bg-primary);
+  border-color: var(--accent);
 }
 
 .toolbar button:active {
-    transform: scale(0.97);
+  transform: scale(0.97);
 }
 
 .toolbar button .icon {
-    font-size: 16px;
+  font-size: 16px;
 }
 
 .toolbar .status {
-    font-size: 12px;
-    padding: 4px 8px;
-    background: var(--accent);
-    color: var(--bg-primary);
-    border-radius: 4px;
-    font-weight: 600;
+  font-size: 12px;
+  padding: 4px 8px;
+  background: var(--accent);
+  color: var(--bg-primary);
+  border-radius: 4px;
+  font-weight: 600;
 }
 
 /* Editor Container */
 .editor-container {
-    flex: 1;
-    overflow: auto;
-    padding: 32px;
-    background: var(--bg-primary);
+  flex: 1;
+  overflow: auto;
+  padding: 32px;
+  background: var(--bg-primary);
 }
 
 #editor {
-    max-width: 900px;
-    margin: 0 auto;
-    min-height: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 100%;
 }
 
 /* Milkdown Editor Styles */
 .milkdown,
 .crepe {
-    font-family: var(--editor-font);
-    font-size: 16px;
-    line-height: var(--line-height);
-    color: var(--text-primary);
-    outline: none;
+  font-family: var(--editor-font);
+  font-size: 16px;
+  line-height: var(--line-height);
+  color: var(--text-primary);
+  outline: none;
 }
 
 /* Force line height on inner elements */
@@ -151,28 +153,40 @@ html, body {
 .crepe .ProseMirror,
 .milkdown p,
 .crepe p,
-.milkdown h1, .milkdown h2, .milkdown h3, .milkdown h4, .milkdown h5, .milkdown h6,
-.crepe h1, .crepe h2, .crepe h3, .crepe h4, .crepe h5, .crepe h6,
-.milkdown ul, .milkdown ol,
-.crepe ul, .crepe ol,
+.milkdown h1,
+.milkdown h2,
+.milkdown h3,
+.milkdown h4,
+.milkdown h5,
+.milkdown h6,
+.crepe h1,
+.crepe h2,
+.crepe h3,
+.crepe h4,
+.crepe h5,
+.crepe h6,
+.milkdown ul,
+.milkdown ol,
+.crepe ul,
+.crepe ol,
 .milkdown li,
 .crepe li {
-    line-height: var(--line-height) !important;
+  line-height: var(--line-height) !important;
 }
 
 .milkdown .editor {
-    outline: none;
+  outline: none;
 }
 
 /* Hide source code markers when editing (prevent showing markdown syntax on focus) */
 .milkdown .ProseMirror-hideselection *::selection {
-    background: transparent;
+  background: transparent;
 }
 
 /* Keep rendered view even when focused - hide markdown syntax markers */
 .milkdown [data-milkdown-type] > .milkdown-syntax,
 .milkdown .milkdown-syntax {
-    display: none !important;
+  display: none !important;
 }
 
 /* Ensure heading markers stay hidden */
@@ -182,33 +196,33 @@ html, body {
 .milkdown h4 .milkdown-syntax,
 .milkdown h5 .milkdown-syntax,
 .milkdown h6 .milkdown-syntax {
-    display: none !important;
+  display: none !important;
 }
 
 /* Hide list markers source */
 .milkdown li .milkdown-syntax {
-    display: none !important;
+  display: none !important;
 }
 
 /* Hide emphasis markers */
 .milkdown strong .milkdown-syntax,
 .milkdown em .milkdown-syntax {
-    display: none !important;
+  display: none !important;
 }
 
 /* Hide code backticks */
 .milkdown code .milkdown-syntax {
-    display: none !important;
+  display: none !important;
 }
 
 .milkdown p,
 .crepe p {
-    margin-bottom: 0.5em;
+  margin-bottom: 0.5em;
 }
 
 .milkdown li,
 .crepe li {
-    margin: 0;
+  margin: 0;
 }
 
 /* Remove margin from nested lists */
@@ -220,22 +234,22 @@ html, body {
 .crepe ul ol,
 .crepe ol ul,
 .crepe ol ol {
-    margin: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+  margin: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 
 /* Adjust list item wrapper height to match line height */
 .milkdown .milkdown-list-item-block li .label-wrapper,
 .milkdown .milkdown-list-item-block li .label-wrapper .label {
-    height: auto !important;
-    min-height: 1em;
+  height: auto !important;
+  min-height: 1em;
 }
 
 /* Remove margin from paragraphs inside list items */
 .milkdown li p,
 .crepe li p {
-    margin: 0 !important;
+  margin: 0 !important;
 }
 
 /* Remove all spacing from list structure elements */
@@ -243,319 +257,316 @@ html, body {
 .milkdown .list-item,
 .milkdown .list-item > .children,
 .milkdown .list-item .content-dom {
-    margin: 0 !important;
-    padding: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Ensure nested ul has no extra spacing */
 .milkdown .content-dom > ul,
 .milkdown .content-dom > ol {
-    margin: 0 !important;
-    padding-left: 1em !important;
+  margin: 0 !important;
+  padding-left: 1em !important;
 }
 
-
-
-
 .milkdown h1 {
-    font-size: 2.5em;
-    font-weight: 700;
-    margin: 32px 0 16px;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--border);
-    color: var(--accent);
+  font-size: 2.5em;
+  font-weight: 700;
+  margin: 32px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border);
+  color: var(--accent);
 }
 
 .milkdown h2 {
-    font-size: 2em;
-    font-weight: 600;
-    margin: 28px 0 14px;
-    color: var(--accent-hover);
+  font-size: 2em;
+  font-weight: 600;
+  margin: 28px 0 14px;
+  color: var(--accent-hover);
 }
 
 .milkdown h3 {
-    font-size: 1.5em;
-    font-weight: 600;
-    margin: 24px 0 12px;
+  font-size: 1.5em;
+  font-weight: 600;
+  margin: 24px 0 12px;
 }
 
 .milkdown h4 {
-    font-size: 1.25em;
-    font-weight: 600;
-    margin: 20px 0 10px;
+  font-size: 1.25em;
+  font-weight: 600;
+  margin: 20px 0 10px;
 }
 
-.milkdown h5, .milkdown h6 {
-    font-size: 1em;
-    font-weight: 600;
-    margin: 16px 0 8px;
+.milkdown h5,
+.milkdown h6 {
+  font-size: 1em;
+  font-weight: 600;
+  margin: 16px 0 8px;
 }
 
 .milkdown strong {
-    font-weight: 700;
-    color: var(--text-primary);
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .milkdown em {
-    font-style: italic;
-    color: var(--text-secondary);
+  font-style: italic;
+  color: var(--text-secondary);
 }
 
 .milkdown code {
-    font-family: var(--mono-font);
-    background: var(--bg-secondary);
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.9em;
-    color: var(--warning);
+  font-family: var(--mono-font);
+  background: var(--bg-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  color: var(--warning);
 }
 
 .milkdown pre {
-    background: var(--bg-secondary);
-    padding: 16px;
-    border-radius: 8px;
-    overflow-x: auto;
-    margin: 16px 0;
-    border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 16px 0;
+  border: 1px solid var(--border);
 }
 
 .milkdown pre code {
-    background: none;
-    padding: 0;
-    color: var(--text-primary);
+  background: none;
+  padding: 0;
+  color: var(--text-primary);
 }
 
 .milkdown blockquote {
-    border-left: 4px solid var(--accent);
-    padding-left: 16px;
-    margin: 16px 0;
-    color: var(--text-secondary);
-    font-style: italic;
+  border-left: 4px solid var(--accent);
+  padding-left: 16px;
+  margin: 16px 0;
+  color: var(--text-secondary);
+  font-style: italic;
 }
 
 /* Aggressive reset for lists inside editor */
 #editor li {
-    list-style: none !important;
+  list-style: none !important;
 }
 
 #editor li::marker {
-    display: none !important;
-    content: "" !important;
+  display: none !important;
+  content: "" !important;
 }
 
 #editor li {
-    display: flex !important;
-    align-items: baseline !important;
-    margin: 0.2em 0 !important;
+  display: flex !important;
+  align-items: baseline !important;
+  margin: 0.2em 0 !important;
 }
 
 /* Hide Milkdown's internal bullet wrapper only for standard bullet lists 
    Exclude task lists ([data-checked]) and ordered lists (inside ol - accounted for by selector) */
 #editor ul li:not([data-checked]) .label-wrapper {
-    display: none !important;
+  display: none !important;
 }
 
 /* Custom Bullet - Apply only to standard ul items */
 #editor ul li:not([data-checked])::before {
-    content: "\2022";
-    margin-right: 0.5em;
-    font-weight: bold;
-    color: var(--text-secondary);
-    flex-shrink: 0;
+  content: "\2022";
+  margin-right: 0.5em;
+  font-weight: bold;
+  color: var(--text-secondary);
+  flex-shrink: 0;
 }
 
-
-
 .milkdown a {
-    color: var(--accent);
-    text-decoration: none;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.2s ease;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
 }
 
 .milkdown a:hover {
-    border-bottom-color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 .milkdown hr {
-    border: none;
-    border-top: 2px solid var(--border);
-    margin: 24px 0;
+  border: none;
+  border-top: 2px solid var(--border);
+  margin: 24px 0;
 }
 
 .milkdown table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 16px 0;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
 }
 
-.milkdown th, .milkdown td {
-    border: 1px solid var(--border);
-    padding: 12px;
-    text-align: left;
+.milkdown th,
+.milkdown td {
+  border: 1px solid var(--border);
+  padding: 12px;
+  text-align: left;
 }
 
 .milkdown th {
-    background: var(--bg-secondary);
-    font-weight: 600;
+  background: var(--bg-secondary);
+  font-weight: 600;
 }
 
 .milkdown img {
-    max-width: 100%;
-    border-radius: 8px;
-    margin: 16px 0;
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 16px 0;
 }
 
 /* Task list */
 .milkdown li[data-checked="true"],
 .milkdown li[data-checked="false"] {
-    list-style: none;
-    position: relative;
+  list-style: none;
+  position: relative;
 }
 
 .milkdown li[data-checked="true"]::before {
-    content: "✅";
-    position: absolute;
-    left: -24px;
+  content: "✅";
+  position: absolute;
+  left: -24px;
 }
 
 .milkdown li[data-checked="false"]::before {
-    content: "⬜";
-    position: absolute;
-    left: -24px;
+  content: "⬜";
+  position: absolute;
+  left: -24px;
 }
 
 /* Selection */
 .milkdown ::selection {
-    background: var(--accent);
-    color: var(--bg-primary);
+  background: var(--accent);
+  color: var(--bg-primary);
 }
 
 /* Placeholder */
 .milkdown .placeholder {
-    color: var(--text-secondary);
-    pointer-events: none;
+  color: var(--text-secondary);
+  pointer-events: none;
 }
 
 /* Focus styles */
 .milkdown:focus-within {
-    outline: none;
+  outline: none;
 }
 
 /* Scrollbar */
 .editor-container::-webkit-scrollbar {
-    width: 10px;
+  width: 10px;
 }
 
 .editor-container::-webkit-scrollbar-track {
-    background: var(--bg-primary);
+  background: var(--bg-primary);
 }
 
 .editor-container::-webkit-scrollbar-thumb {
-    background: var(--bg-tertiary);
-    border-radius: 5px;
+  background: var(--bg-tertiary);
+  border-radius: 5px;
 }
 
 .editor-container::-webkit-scrollbar-thumb:hover {
-    background: var(--border);
+  background: var(--border);
 }
 
 /* Source Editor Mode */
 #source-editor-container {
-    display: flex;
-    max-width: 900px;
-    margin: 0 auto;
-    min-height: 100%;
-    font-family: var(--mono-font);
-    font-size: 14px;
-    line-height: var(--line-height);
+  display: flex;
+  max-width: 900px;
+  margin: 0 auto;
+  min-height: 100%;
+  font-family: var(--mono-font);
+  font-size: 14px;
+  line-height: var(--line-height);
 }
 
 #source-editor-container.hidden {
-    display: none;
+  display: none;
 }
 
 #line-numbers {
-    padding: 16px 12px;
-    background: var(--bg-secondary);
-    border-right: 1px solid var(--border);
-    text-align: right;
-    user-select: none;
-    -webkit-user-select: none;
-    color: var(--text-secondary);
-    min-width: 50px;
-    counter-reset: line;
+  padding: 16px 12px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  text-align: right;
+  user-select: none;
+  -webkit-user-select: none;
+  color: var(--text-secondary);
+  min-width: 50px;
+  counter-reset: line;
 }
 
 #line-numbers .line-number {
-    display: block;
-    counter-increment: line;
-    height: 1.6em;
+  display: block;
+  counter-increment: line;
+  height: 1.6em;
 }
 
 #line-numbers .line-number::before {
-    content: counter(line);
+  content: counter(line);
 }
 
 #source-editor {
-    flex: 1;
-    padding: 16px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    border: none;
-    outline: none;
-    resize: none;
-    font-family: inherit;
-    font-size: inherit;
-    line-height: inherit;
-    tab-size: 4;
+  flex: 1;
+  padding: 16px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  tab-size: 4;
 }
 
 #source-editor::selection {
-    background: var(--accent);
-    color: var(--bg-primary);
+  background: var(--accent);
+  color: var(--bg-primary);
 }
 
 /* Mode indicator active state */
 #mode-indicator.editor-mode {
-    background: var(--success);
+  background: var(--success);
 }
 
 /* Hide WYSIWYG editor when in source mode */
 #editor.hidden {
-    display: none;
+  display: none;
 }
 
 /* Milkdown Crepe overrides for sticky notes */
 .note-editor .milkdown,
 .note-editor .crepe {
-    background: transparent !important;
-    font-family: var(--editor-font);
+  background: transparent !important;
+  font-family: var(--editor-font);
 }
 
 .note-editor .ProseMirror {
-    background: transparent !important;
-    color: #1a1a1a;
-    padding: 0 !important;
-    outline: none;
+  background: transparent !important;
+  color: #1a1a1a;
+  padding: 0 !important;
+  outline: none;
 }
 
 .note-editor .ProseMirror:focus {
-    outline: none;
+  outline: none;
 }
 
 /* Override Crepe toolbar colors for sticky notes */
 .note-editor .crepe .crepe-toolbar {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
 }
 
 /* Crepe feature menu styling for sticky notes */
 .note-editor .crepe .crepe-slash-menu,
 .note-editor .crepe .crepe-feature-menu {
-    background: #fff;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Heading styles for sticky notes */
@@ -565,123 +576,123 @@ html, body {
 .note-editor h4,
 .note-editor h5,
 .note-editor h6 {
-    color: #333;
-    margin-top: 0.5em;
-    margin-bottom: 0.3em;
+  color: #333;
+  margin-top: 0.5em;
+  margin-bottom: 0.3em;
 }
 
 .note-editor h1 {
-    font-size: 1.5em;
-    border-bottom: none;
+  font-size: 1.5em;
+  border-bottom: none;
 }
 
 .note-editor h2 {
-    font-size: 1.3em;
+  font-size: 1.3em;
 }
 
 .note-editor h3 {
-    font-size: 1.1em;
+  font-size: 1.1em;
 }
 
 /* List styling for sticky notes */
 .note-editor ul,
 .note-editor ol {
-    padding-left: 1.5em;
-    margin: 0.5em 0;
+  padding-left: 1.5em;
+  margin: 0.5em 0;
 }
 
 .note-editor li {
-    margin: 0.2em 0;
+  margin: 0.2em 0;
 }
 
 /* Code styling for sticky notes */
 .note-editor code {
-    background: rgba(0, 0, 0, 0.08);
-    color: #c7254e;
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 0.9em;
+  background: rgba(0, 0, 0, 0.08);
+  color: #c7254e;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: "Consolas", "Monaco", monospace;
+  font-size: 0.9em;
 }
 
 .note-editor pre {
-    background: rgba(0, 0, 0, 0.05);
-    padding: 8px;
-    border-radius: 4px;
-    overflow-x: auto;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
 }
 
 .note-editor pre code {
-    background: transparent;
-    padding: 0;
-    color: #333;
+  background: transparent;
+  padding: 0;
+  color: #333;
 }
 
 /* Blockquote styling for sticky notes */
 .note-editor blockquote {
-    border-left: 3px solid rgba(0, 0, 0, 0.2);
-    padding-left: 12px;
-    margin: 0.5em 0;
-    color: #555;
-    font-style: italic;
+  border-left: 3px solid rgba(0, 0, 0, 0.2);
+  padding-left: 12px;
+  margin: 0.5em 0;
+  color: #555;
+  font-style: italic;
 }
 
 /* Link styling for sticky notes */
 .note-editor a {
-    color: #0066cc;
-    text-decoration: underline;
+  color: #0066cc;
+  text-decoration: underline;
 }
 
 /* Selection color for sticky notes */
 .note-editor ::selection {
-    background: rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.3);
 }
 
 /* Strong and emphasis */
 .note-editor strong {
-    font-weight: 700;
+  font-weight: 700;
 }
 
 .note-editor em {
-    font-style: italic;
+  font-style: italic;
 }
 
 /* Horizontal rule */
 .note-editor hr {
-    border: none;
-    border-top: 1px solid rgba(0, 0, 0, 0.15);
-    margin: 1em 0;
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.15);
+  margin: 1em 0;
 }
 
 /* Table styling for sticky notes */
 .note-editor table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 0.5em 0;
-    font-size: 0.9em;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  font-size: 0.9em;
 }
 
 .note-editor th,
 .note-editor td {
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    padding: 6px 8px;
-    text-align: left;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  padding: 6px 8px;
+  text-align: left;
 }
 
 .note-editor th {
-    background: rgba(0, 0, 0, 0.05);
-    font-weight: 600;
+  background: rgba(0, 0, 0, 0.05);
+  font-weight: 600;
 }
 
 /* Task list items */
 .note-editor li[data-checked] {
-    list-style: none;
+  list-style: none;
 }
 
 .note-editor li[data-checked]::before {
-    content: "☐ ";
+  content: "☐ ";
 }
 
 .note-editor li[data-checked="true"]::before {
-    content: "☑ ";
+  content: "☑ ";
 }

@@ -481,6 +481,15 @@ function setupEventListeners() {
 // Initialize
 // eslint-disable-next-line @typescript-eslint/no-misused-promises
 document.addEventListener('DOMContentLoaded', async () => {
+    // Attach console log to Tauri terminal (Tauri only)
+    if ((window as any).__TAURI__) {
+        try {
+            const { attachConsole } = await import('@tauri-apps/plugin-log');
+            await attachConsole();
+        } catch (e) {
+            console.error('Failed to attach console:', e);
+        }
+    }
     console.log('DOMContentLoaded fired');
     adapter = await getAdapter();
 

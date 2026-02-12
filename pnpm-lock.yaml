@@ -20,14 +20,26 @@ importers:
       '@milkdown/kit':
         specifier: ^7.18.0
         version: 7.18.0(@codemirror/language@6.12.1)(@codemirror/state@6.5.4)(@codemirror/view@6.39.14)(typescript@5.9.3)
+      '@milkdown/plugin-listener':
+        specifier: ^7.18.0
+        version: 7.18.0
+      '@milkdown/preset-commonmark':
+        specifier: ^7.18.0
+        version: 7.18.0
+      '@milkdown/preset-gfm':
+        specifier: ^7.18.0
+        version: 7.18.0
       '@milkdown/prose':
         specifier: ^7.18.0
         version: 7.18.0
       '@milkdown/theme-nord':
         specifier: ^7.18.0
         version: 7.18.0
+      '@milkdown/utils':
+        specifier: ^7.18.0
+        version: 7.18.0
       '@tauri-apps/api':
-        specifier: ^2.0.0
+        specifier: ~2.10.0
         version: 2.10.1
       '@tauri-apps/plugin-dialog':
         specifier: ^2.6.0
@@ -35,12 +47,15 @@ importers:
       '@tauri-apps/plugin-fs':
         specifier: ^2.4.5
         version: 2.4.5
+      '@tauri-apps/plugin-log':
+        specifier: ^2.8.0
+        version: 2.8.0
       firebase:
         specifier: ^12.9.0
         version: 12.9.0
     devDependencies:
       '@tauri-apps/cli':
-        specifier: ^2.0.0
+        specifier: ~2.10.0
         version: 2.10.0
       '@types/node':
         specifier: ^25.2.3
@@ -1051,6 +1066,9 @@ packages:
 
   '@tauri-apps/plugin-fs@2.4.5':
     resolution: {integrity: sha512-dVxWWGE6VrOxC7/jlhyE+ON/Cc2REJlM35R3PJX3UvFw2XwYhLGQVAIyrehenDdKjotipjYEVc4YjOl3qq90fA==}
+
+  '@tauri-apps/plugin-log@2.8.0':
+    resolution: {integrity: sha512-a+7rOq3MJwpTOLLKbL8d0qGZ85hgHw5pNOWusA9o3cf7cEgtYHiGY/+O8fj8MvywQIGqFv0da2bYQDlrqLE7rw==}
 
   '@tokenizer/token@0.3.0':
     resolution: {integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==}
@@ -3315,6 +3333,10 @@ snapshots:
       '@tauri-apps/api': 2.10.1
 
   '@tauri-apps/plugin-fs@2.4.5':
+    dependencies:
+      '@tauri-apps/api': 2.10.1
+
+  '@tauri-apps/plugin-log@2.8.0':
     dependencies:
       '@tauri-apps/api': 2.10.1
 

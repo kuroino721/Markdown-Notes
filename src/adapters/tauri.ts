@@ -3,7 +3,17 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { listen } from '@tauri-apps/api/event';
 import { readTextFile } from '@tauri-apps/plugin-fs';
 import { ask } from '@tauri-apps/plugin-dialog';
-import { GoogleDriveService } from './google-drive.js';
+import {
+    initGoogleDrive,
+    signInGoogleDrive,
+    signOutGoogleDrive,
+    hasPreviousGoogleDriveSession,
+    getGoogleDriveUserInfo,
+    findGoogleDriveSyncFile,
+    readGoogleDriveSyncFile,
+    saveToGoogleDrive,
+    isGoogleDriveLoggedIn
+} from './google-drive.js';
 import { SyncLogic } from './sync-logic.js';
 import { Adapter, Note } from './types';
 
@@ -95,11 +105,11 @@ export const TauriAdapter: Adapter = {
 
     // Sync operations
     async initSync() {
-        await GoogleDriveService.init();
-        if (GoogleDriveService.hasPreviousSession()) {
+        await initGoogleDrive();
+        if (hasPreviousGoogleDriveSession()) {
             try {
                 const lastUser = localStorage.getItem('markdown_editor_last_synced_user');
-                await GoogleDriveService.signIn(true, lastUser || undefined);
+                await signInGoogleDrive(true, lastUser || undefined);
                 await this.syncWithDrive();
             } catch (e) {
                 console.log('Tauri silent auto-sync not available:', e);
@@ -108,15 +118,15 @@ export const TauriAdapter: Adapter = {
     },
 
     async getUserInfo() {
-        return await GoogleDriveService.getUserInfo();
+        return await getGoogleDriveUserInfo();
     },
 
     async signOut() {
-        GoogleDriveService.signOut();
+        signOutGoogleDrive();
     },
 
     async signIn() {
-        await GoogleDriveService.signIn();
+        await signInGoogleDrive();
         await this.syncWithDrive();
     },
 
@@ -131,13 +141,13 @@ export const TauriAdapter: Adapter = {
             return;
         }
 
-        if (!GoogleDriveService.isLoggedIn()) {
+        if (!isGoogleDriveLoggedIn()) {
             // console.log('[DEBUG] TauriAdapter: Sync skipped - Not logged in');
             return;
         }
 
         try {
-            const currentUser = await GoogleDriveService.getUserInfo();
+            const currentUser = await getGoogleDriveUserInfo();
             const lastUser = localStorage.getItem('markdown_editor_last_synced_user');
 
             if (lastUser && currentUser && lastUser !== currentUser) {
@@ -159,18 +169,18 @@ export const TauriAdapter: Adapter = {
                 localStorage.setItem('markdown_editor_last_synced_user', currentUser);
             }
 
-            const file = await GoogleDriveService.findSyncFile();
+            const file = await findGoogleDriveSyncFile();
             const localNotes = await invoke<Note[]>('get_all_notes');
 
             if (file) {
-                const remoteNotes = await GoogleDriveService.readSyncFile(file.id);
+                const remoteNotes = await readGoogleDriveSyncFile(file.id);
                 const merged = SyncLogic.mergeNotes(localNotes, remoteNotes);
 
                 // Save merged data back to Rust and then to Drive
                 await invoke('save_all_notes', { notes: merged });
-                await GoogleDriveService.saveToDrive(merged);
+                await saveToGoogleDrive(merged);
             } else {
-                await GoogleDriveService.saveToDrive(localNotes);
+                await saveToGoogleDrive(localNotes);
             }
         } catch (error) {
             console.error('Tauri sync failed:', error);
@@ -179,7 +189,7 @@ export const TauriAdapter: Adapter = {
     },
 
     isSyncEnabled() {
-        return GoogleDriveService.isLoggedIn();
+        return isGoogleDriveLoggedIn();
     },
 
     // UI/Window operations

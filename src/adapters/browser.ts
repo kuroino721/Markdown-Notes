@@ -1,4 +1,14 @@
-import { GoogleDriveService } from './google-drive.js';
+import {
+    initGoogleDrive,
+    signInGoogleDrive,
+    signOutGoogleDrive,
+    hasPreviousGoogleDriveSession,
+    getGoogleDriveUserInfo,
+    findGoogleDriveSyncFile,
+    readGoogleDriveSyncFile,
+    saveToGoogleDrive,
+    isGoogleDriveLoggedIn
+} from './google-drive.js';
 import { SyncLogic } from './sync-logic.js';
 // @ts-ignore
 import { NOTE_COLOR_DEFAULT } from '../constants.js';
@@ -18,12 +28,12 @@ function saveStoredNotes(notes: Note[]): void {
 export const BrowserAdapter: Adapter = {
     // Sync operations
     async initSync(): Promise<void> {
-        await GoogleDriveService.init();
-        if (GoogleDriveService.hasPreviousSession()) {
+        await initGoogleDrive();
+        if (hasPreviousGoogleDriveSession()) {
             try {
                 const lastUser = localStorage.getItem('markdown_editor_last_synced_user');
                 // Try silent sign-in without popup, using login_hint for better success rate
-                await GoogleDriveService.signIn(true, lastUser);
+                await signInGoogleDrive(true, lastUser);
                 await this.syncWithDrive();
             } catch (e) {
                 console.log('Silent auto-sync not possible:', e);
@@ -33,15 +43,15 @@ export const BrowserAdapter: Adapter = {
     },
 
     async getUserInfo() {
-        return await GoogleDriveService.getUserInfo();
+        return await getGoogleDriveUserInfo();
     },
 
     async signOut() {
-        GoogleDriveService.signOut();
+        signOutGoogleDrive();
     },
 
     async signIn() {
-        await GoogleDriveService.signIn();
+        await signInGoogleDrive();
         await this.syncWithDrive();
     },
     async syncWithDrive() {
@@ -51,11 +61,11 @@ export const BrowserAdapter: Adapter = {
             return;
         }
 
-        if (!GoogleDriveService.isLoggedIn()) return;
+        if (!isGoogleDriveLoggedIn()) return;
 
         try {
             // Check for account switch
-            const currentUser = await GoogleDriveService.getUserInfo();
+            const currentUser = await getGoogleDriveUserInfo();
             const lastUser = localStorage.getItem('markdown_editor_last_synced_user');
 
             if (lastUser && currentUser && lastUser !== currentUser) {
@@ -79,21 +89,21 @@ export const BrowserAdapter: Adapter = {
                 localStorage.setItem('markdown_editor_last_synced_user', currentUser);
             }
 
-            const file = await GoogleDriveService.findSyncFile();
+            const file = await findGoogleDriveSyncFile();
             const localNotes = getStoredNotes();
 
             if (file) {
-                const remoteNotes = await GoogleDriveService.readSyncFile(file.id);
+                const remoteNotes = await readGoogleDriveSyncFile(file.id);
 
                 // Use shared merge logic
                 const merged = SyncLogic.mergeNotes(localNotes, remoteNotes);
 
                 // Save merged data
                 saveStoredNotes(merged);
-                await GoogleDriveService.saveToDrive(merged);
+                await saveToGoogleDrive(merged);
             } else {
                 // First time sync, upload local notes
-                await GoogleDriveService.saveToDrive(localNotes);
+                await saveToGoogleDrive(localNotes);
             }
         } catch (error) {
             console.error('Failed to sync with Google Drive:', error);
@@ -101,8 +111,9 @@ export const BrowserAdapter: Adapter = {
         }
     },
     isSyncEnabled() {
-        return GoogleDriveService.isLoggedIn();
+        return isGoogleDriveLoggedIn();
     },
+
 
     // Data operations
     async getNotes(): Promise<Note[]> {

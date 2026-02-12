@@ -60,6 +60,21 @@ export function renderPreview(content: string): string {
 .markdown-body ol {
   padding-left: 1.2em;
 }
+
+/* テーブルの枠線表示（カード内ではデフォルトスタイルが適用されない場合があるため明示的に指定） */
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5em 0;
+}
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid rgba(255, 255, 255, 0.2); /* 背景色に合わせた色を指定 */
+  padding: 4px 8px;
+}
+.markdown-body th {
+  background: rgba(255, 255, 255, 0.05);
+}
 ```
 
 ## 注意点

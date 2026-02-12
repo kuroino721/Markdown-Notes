@@ -106,7 +106,7 @@ async function initEditor(content: string) {
             const { editorViewCtx } = await import('@milkdown/core');
             crepeInstance.editor.action((ctx) => {
                 editorView = ctx.get(editorViewCtx);
-                console.log('Got editor view via action:', editorView);
+                // console.log('Got editor view via action:', editorView);
             });
         } catch (e) {
             console.error('Failed to get editor view:', e);
@@ -133,7 +133,7 @@ async function initEditor(content: string) {
             }
         );
 
-        console.log('Milkdown Crepe editor initialized');
+        // console.log('Milkdown Crepe editor initialized');
     } catch (error) {
         console.error('Failed to initialize Milkdown Crepe:', error);
         // Fallback to simple contentEditable
@@ -490,11 +490,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             console.error('Failed to attach console:', e);
         }
     }
-    console.log('DOMContentLoaded fired');
+    // console.log('DOMContentLoaded fired');
     adapter = await getAdapter();
 
     noteId = getNoteIdFromUrl();
-    console.log('Note ID:', noteId);
+    // console.log('Note ID:', noteId);
 
     if (!noteId) {
         console.error('No note ID provided');
@@ -509,14 +509,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Retry logic for newly created notes
         let retries = 10;
         while (retries > 0) {
-            console.log('Attempting to load note, retries left:', retries);
+            // console.log('Attempting to load note, retries left:', retries);
             noteData = await adapter.getNote(noteId);
             if (noteData) break;
             retries--;
             await new Promise(resolve => setTimeout(resolve, 200));
         }
 
-        console.log('Note data:', noteData);
+        // console.log('Note data:', noteData);
 
         if (noteData) {
             const noteTitle = document.getElementById('note-title');

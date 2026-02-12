@@ -14,34 +14,34 @@ window.IS_TAURI_ADAPTER = true;
 export const TauriAdapter: Adapter = {
     // Data operations
     async getNotes(): Promise<Note[]> {
-        console.log('[DEBUG] TauriAdapter: getNotes() called');
+        // console.log('[DEBUG] TauriAdapter: getNotes() called');
         const notes = await invoke<Note[]>('get_all_notes');
-        console.log(`[DEBUG] TauriAdapter: getNotes() returned ${notes.length} notes`);
+        // console.log(`[DEBUG] TauriAdapter: getNotes() returned ${notes.length} notes`);
         // Filter out deleted notes (tombstones)
         return notes.filter(n => !n.deleted);
     },
 
     async getNote(noteId: string): Promise<Note | null> {
-        console.log(`[DEBUG] TauriAdapter: getNote(${noteId}) called`);
+        // console.log(`[DEBUG] TauriAdapter: getNote(${noteId}) called`);
         const note = await invoke<Note | null>('get_note', { noteId });
-        console.log(`[DEBUG] TauriAdapter: getNote(${noteId}) result:`, note ? 'found' : 'not found');
+        // console.log(`[DEBUG] TauriAdapter: getNote(${noteId}) result:`, note ? 'found' : 'not found');
         if (note && note.deleted) return null;
         return note;
     },
 
     async createNote(): Promise<Note> {
-        console.log('[DEBUG] TauriAdapter: createNote() called');
+        // console.log('[DEBUG] TauriAdapter: createNote() called');
         const note = await invoke<Note>('create_note');
-        console.log('[DEBUG] TauriAdapter: createNote() returned:', note.id);
+        // console.log('[DEBUG] TauriAdapter: createNote() returned:', note.id);
         return note;
     },
 
     async saveNote(note: Note): Promise<any> {
-        console.log(`[DEBUG] TauriAdapter: saveNote(${note.id}) called`);
+        // console.log(`[DEBUG] TauriAdapter: saveNote(${note.id}) called`);
         // Ensure deleted flag is reset when saving (reviving or normal save)
         const updatedNote = { ...note, deleted: !!note.deleted };
         const result = await invoke('save_note', { note: updatedNote });
-        console.log(`[DEBUG] TauriAdapter: saveNote(${note.id}) result: success`);
+        // console.log(`[DEBUG] TauriAdapter: saveNote(${note.id}) result: success`);
 
         // Delegate sync to main window
         this.syncWithDrive().catch(err => {
@@ -121,18 +121,18 @@ export const TauriAdapter: Adapter = {
     },
 
     async syncWithDrive() {
-        console.log('[DEBUG] TauriAdapter: syncWithDrive() initiated');
+        // console.log('[DEBUG] TauriAdapter: syncWithDrive() initiated');
         // In Tauri, we check if we're in the main window
         const currentWindow = getCurrentWindow();
         if (currentWindow.label !== 'main') {
-            console.log('[DEBUG] TauriAdapter: Sync requested from sub-window, emitting event');
+            // console.log('[DEBUG] TauriAdapter: Sync requested from sub-window, emitting event');
             const { emit } = await import('@tauri-apps/api/event');
             await emit('request-sync');
             return;
         }
 
         if (!GoogleDriveService.isLoggedIn()) {
-            console.log('[DEBUG] TauriAdapter: Sync skipped - Not logged in');
+            // console.log('[DEBUG] TauriAdapter: Sync skipped - Not logged in');
             return;
         }
 
@@ -184,19 +184,19 @@ export const TauriAdapter: Adapter = {
 
     // UI/Window operations
     async openNote(noteId: string) {
-        console.log(`[DEBUG] TauriAdapter: openNote(${noteId}) called`);
+        // console.log(`[DEBUG] TauriAdapter: openNote(${noteId}) called`);
         const { WebviewWindow } = await import('@tauri-apps/api/webviewWindow');
 
         // Check if window already exists
         const existing = await WebviewWindow.getByLabel(noteId);
         if (existing) {
-            console.log(`[DEBUG] TauriAdapter: Window ${noteId} already exists, focusing`);
+            // console.log(`[DEBUG] TauriAdapter: Window ${noteId} already exists, focusing`);
             await existing.setFocus();
             return;
         }
 
         // Create new window via Rust command
-        console.log(`[DEBUG] TauriAdapter: Creating new window for ${noteId}`);
+        // console.log(`[DEBUG] TauriAdapter: Creating new window for ${noteId}`);
         await invoke('open_note_window', { noteId });
     },
 

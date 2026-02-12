@@ -117,7 +117,7 @@ async function createNewNote() {
     if (!adapter) adapter = await getAdapter();
     try {
         const note = await adapter.createNote();
-        console.log('Created note:', note);
+        // console.log('Created note:', note);
         await renderNotes();
         // Open the note window after creation
         await openNoteWindow(note.id);
@@ -160,7 +160,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    console.log('[DEBUG] main.js: DOMContentLoaded');
+    // console.log('[DEBUG] main.js: DOMContentLoaded');
     adapter = await getAdapter();
 
     await renderNotes();
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Listen for file open events
     adapter.onFileOpen(async (filePath) => {
-        console.log('[DEBUG] main.js: onFileOpen event received:', filePath);
+        // console.log('[DEBUG] main.js: onFileOpen event received:', filePath);
         if (filePath) {
             await handleFileOpen(filePath);
         }
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const closeBtn = document.getElementById('close-side-panel');
             if (closeBtn) closeBtn.click();
         } else if (e.data.type === 'request-sync') {
-            console.log('Sync requested from iframe');
+            // console.log('Sync requested from iframe');
             await triggerSync();
         }
     });
@@ -241,14 +241,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Use Tauri's listen directly for request-sync if available
         import('@tauri-apps/api/event').then(({ listen }) => {
             listen('request-sync', () => {
-                console.log('Sync requested from Tauri sub-window');
+                // console.log('Sync requested from Tauri sub-window');
                 triggerSync().catch(console.error);
             });
         }).catch(() => { });
     }
 
     async function triggerSync() {
-        console.log('[DEBUG] main.js: triggerSync() called');
+        // console.log('[DEBUG] main.js: triggerSync() called');
         const adapter = await getAdapter();
         if (adapter.syncWithDrive) {
             adapter.syncWithDrive().catch(err => {
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Refresh notes when window gains focus
     window.addEventListener('focus', () => {
-        console.log('[DEBUG] main.js: Window focused, rendering notes');
+        // console.log('[DEBUG] main.js: Window focused, rendering notes');
         renderNotes().catch(console.error);
     });
 });

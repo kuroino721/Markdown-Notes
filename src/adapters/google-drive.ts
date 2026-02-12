@@ -52,7 +52,7 @@ export const GoogleDriveService = {
             const error = params.get('error');
 
             if (accessToken) {
-                console.log('Detected access token in URL hash');
+                // console.log('Detected access token in URL hash');
                 pendingToken = accessToken;
                 // Clear hash to avoid re-processing or leaking token
                 window.history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -70,7 +70,7 @@ export const GoogleDriveService = {
      */
     async init(): Promise<void> {
         const clientId = getClientId();
-        console.log('[DEBUG] GoogleDriveService: init() called. CLIENT_ID:', clientId);
+        // console.log('[DEBUG] GoogleDriveService: init() called. CLIENT_ID:', clientId);
         if (!clientId || clientId.includes('YOUR_CLIENT_ID')) {
             console.warn('[DEBUG] GoogleDriveService: Google Drive Client ID is not set. Please check your .env file or environment variables.');
             return;
@@ -91,14 +91,14 @@ export const GoogleDriveService = {
                     });
 
                     if (pendingToken) {
-                        console.log('[DEBUG] GoogleDriveService: Applying pending token from redirect');
+                        // console.log('[DEBUG] GoogleDriveService: Applying pending token from redirect');
                         gapi.client.setToken({ access_token: pendingToken });
                         pendingToken = null;
                         localStorage.setItem('markdown_editor_gdrive_enabled', 'true');
                     }
 
                     gapiInited = true;
-                    console.log('[DEBUG] GoogleDriveService: GAPI inited');
+                    // console.log('[DEBUG] GoogleDriveService: GAPI inited');
                     checkInit();
                 } catch (e) {
                     console.error('[DEBUG] GoogleDriveService: GAPI init failed:', e);
@@ -108,13 +108,13 @@ export const GoogleDriveService = {
             const initGis = () => {
                 try {
                     const clientId = getClientId();
-                    console.log('Initializing GIS with CLIENT_ID:', clientId);
+                    // console.log('Initializing GIS with CLIENT_ID:', clientId);
                     tokenClient = google.accounts.oauth2.initTokenClient({
                         client_id: clientId,
                         scope: SCOPES,
                         callback: '', // defined later in signIn
                     });
-                    console.log('GIS tokenClient initialized:', !!tokenClient);
+                    // console.log('GIS tokenClient initialized:', !!tokenClient);
                     gisInited = true;
                     checkInit();
                 } catch (e) {
@@ -124,17 +124,17 @@ export const GoogleDriveService = {
 
             const pollScripts = setInterval(() => {
                 if (typeof gapi !== 'undefined' && gapi.load && !gapiInited) {
-                    console.log('[DEBUG] GoogleDriveService: gapi loaded, calling load("client")');
+                    // console.log('[DEBUG] GoogleDriveService: gapi loaded, calling load("client")');
                     this.checkRedirectResponse();
                     gapi.load('client', initGapi);
                 }
                 if (typeof google !== 'undefined' && google.accounts && !gisInited) {
-                    console.log('[DEBUG] GoogleDriveService: google identity services loaded, initing GIS');
+                    // console.log('[DEBUG] GoogleDriveService: google identity services loaded, initing GIS');
                     initGis();
                 }
 
                 if (gapiInited && gisInited) {
-                    console.log('[DEBUG] GoogleDriveService: Both GAPI and GIS inited');
+                    // console.log('[DEBUG] GoogleDriveService: Both GAPI and GIS inited');
                     clearInterval(pollScripts);
                 }
             }, 100);
@@ -212,7 +212,7 @@ export const GoogleDriveService = {
                 });
                 const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 
-                console.log('[DEBUG] GoogleDriveService: Auth URL built', authUrl.substring(0, 50) + '...');
+                // console.log('[DEBUG] GoogleDriveService: Auth URL built', authUrl.substring(0, 50) + '...');
 
                 // 3. Start loopback server and wait for code
                 const codePromise = invoke('start_google_auth_server');
@@ -221,7 +221,7 @@ export const GoogleDriveService = {
                 await invoke('open_external_url', { url: authUrl });
 
                 const code = await codePromise;
-                console.log('[DEBUG] GoogleDriveService: Code received from loopback');
+                // console.log('[DEBUG] GoogleDriveService: Code received from loopback');
 
                 // 5. Exchange code for token
                 await invoke('frontend_log', { level: 'info', message: '[SYNC] Exchanging code for token...' });
@@ -265,7 +265,7 @@ export const GoogleDriveService = {
 
         return new Promise((resolve, reject) => {
             tokenClient.callback = async (resp: any) => {
-                console.log('Google Auth Response received:', resp);
+                // console.log('Google Auth Response received:', resp);
                 if (resp.error !== undefined) {
                     console.error('Google Auth Error:', resp.error);
                     reject(resp);
@@ -305,14 +305,14 @@ export const GoogleDriveService = {
      * Find the sync file on Google Drive
      */
     async findSyncFile(): Promise<any> {
-        console.log('[DEBUG] GoogleDriveService: findSyncFile() called');
+        // console.log('[DEBUG] GoogleDriveService: findSyncFile() called');
         const response = await gapi.client.drive.files.list({
             q: `name = '${SYNC_FILE_NAME}' and trashed = false`,
             fields: 'files(id, name)',
             spaces: 'drive',
         });
         const files = response.result.files;
-        console.log(`[DEBUG] GoogleDriveService: findSyncFile() found ${files ? files.length : 0} files`);
+        // console.log(`[DEBUG] GoogleDriveService: findSyncFile() found ${files ? files.length : 0} files`);
         return files && files.length > 0 ? files[0] : null;
     },
 
@@ -336,12 +336,12 @@ export const GoogleDriveService = {
      * Read content from the sync file
      */
     async readSyncFile(fileId: string): Promise<any> {
-        console.log(`[DEBUG] GoogleDriveService: readSyncFile(${fileId})`);
+        // console.log(`[DEBUG] GoogleDriveService: readSyncFile(${fileId})`);
         const response = await gapi.client.drive.files.get({
             fileId: fileId,
             alt: 'media',
         });
-        console.log('[DEBUG] GoogleDriveService: readSyncFile() success');
+        // console.log('[DEBUG] GoogleDriveService: readSyncFile() success');
         return response.result;
     },
 
@@ -349,7 +349,7 @@ export const GoogleDriveService = {
      * Create or update the sync file on Google Drive
      */
     async saveToDrive(content: any): Promise<any> {
-        console.log('[DEBUG] GoogleDriveService: saveToDrive()');
+        // console.log('[DEBUG] GoogleDriveService: saveToDrive()');
         const file = await this.findSyncFile();
         const metadata = {
             name: SYNC_FILE_NAME,
@@ -357,7 +357,7 @@ export const GoogleDriveService = {
         };
 
         if (file) {
-            console.log(`[DEBUG] GoogleDriveService: Updating existing file ${file.id}`);
+            // console.log(`[DEBUG] GoogleDriveService: Updating existing file ${file.id}`);
             // Update existing file
             return await gapi.client.request({
                 path: `/upload/drive/v3/files/${file.id}`,
@@ -366,14 +366,14 @@ export const GoogleDriveService = {
                 body: JSON.stringify(content),
             });
         } else {
-            console.log('[DEBUG] GoogleDriveService: Creating new sync file');
+            // console.log('[DEBUG] GoogleDriveService: Creating new sync file');
             // Create new file
             // First create metadata, then upload content
             const createResp = await gapi.client.drive.files.create({
                 resource: metadata,
                 fields: 'id',
             });
-            console.log(`[DEBUG] GoogleDriveService: New file metadata created with ID ${createResp.result.id}`);
+            // console.log(`[DEBUG] GoogleDriveService: New file metadata created with ID ${createResp.result.id}`);
             return await gapi.client.request({
                 path: `/upload/drive/v3/files/${createResp.result.id}`,
                 method: 'PATCH',

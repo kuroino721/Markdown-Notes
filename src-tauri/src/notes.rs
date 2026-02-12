@@ -80,14 +80,14 @@ impl NotesStore {
     }
 
     pub fn load_from_path(path: &PathBuf) -> Self {
-        log::info!("NotesStore: Loading from {:?}", path);
+        log::debug!("NotesStore: Loading from {:?}", path);
         if path.exists() {
             let content = fs::read_to_string(path).unwrap_or_default();
             let store = serde_json::from_str(&content).unwrap_or_default();
-            log::info!("NotesStore: Loaded store successfully");
+            log::debug!("NotesStore: Loaded store successfully");
             store
         } else {
-            log::info!("NotesStore: Store file does not exist, using default");
+            log::debug!("NotesStore: Store file does not exist, using default");
             Self::default()
         }
     }
@@ -98,10 +98,10 @@ impl NotesStore {
     }
 
     pub fn save_to_path(&self, path: &PathBuf) -> Result<(), String> {
-        log::info!("NotesStore: Saving to {:?}", path);
+        log::debug!("NotesStore: Saving to {:?}", path);
         let content = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
         fs::write(path, content).map_err(|e| e.to_string())?;
-        log::info!("NotesStore: Saved successfully");
+        log::debug!("NotesStore: Saved successfully");
         Ok(())
     }
 

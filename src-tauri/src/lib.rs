@@ -7,7 +7,7 @@ use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 #[tauri::command]
 fn create_note(app: tauri::AppHandle) -> Result<Note, String> {
-    log::info!("Command: create_note called");
+    log::debug!("Command: create_note called");
     let mut store = NotesStore::load(&app);
     let note = Note::new();
     store.add_note(note.clone());
@@ -30,21 +30,21 @@ fn create_note(app: tauri::AppHandle) -> Result<Note, String> {
 
 #[tauri::command]
 fn get_all_notes(app: tauri::AppHandle) -> Vec<Note> {
-    log::info!("Command: get_all_notes called");
+    log::debug!("Command: get_all_notes called");
     let store = NotesStore::load(&app);
     store.notes
 }
 
 #[tauri::command]
 fn get_note(app: tauri::AppHandle, note_id: String) -> Option<Note> {
-    log::info!("Command: get_note called for id: {}", note_id);
+    log::debug!("Command: get_note called for id: {}", note_id);
     let store = NotesStore::load(&app);
     store.get_note(&note_id).cloned()
 }
 
 #[tauri::command]
 fn save_note(app: tauri::AppHandle, note: Note) -> Result<(), String> {
-    log::info!("Command: save_note called for id: {}", note.id);
+    log::debug!("Command: save_note called for id: {}", note.id);
     let mut store = NotesStore::load(&app);
     store.update_note(note);
     store.save(&app)
@@ -52,7 +52,7 @@ fn save_note(app: tauri::AppHandle, note: Note) -> Result<(), String> {
 
 #[tauri::command]
 fn delete_note(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
-    log::info!("Command: delete_note called for id: {}", note_id);
+    log::debug!("Command: delete_note called for id: {}", note_id);
     let mut store = NotesStore::load(&app);
     store.delete_note(&note_id);
     store.save(&app)?;
@@ -67,7 +67,7 @@ fn delete_note(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
 
 #[tauri::command]
 fn save_all_notes(app: tauri::AppHandle, notes: Vec<Note>) -> Result<(), String> {
-    log::info!(
+    log::debug!(
         "Command: save_all_notes called (bulk save of {} notes)",
         notes.len()
     );
@@ -85,7 +85,7 @@ fn update_window_state(
     width: u32,
     height: u32,
 ) -> Result<(), String> {
-    log::info!("Command: update_window_state called for id: {}", note_id);
+    log::debug!("Command: update_window_state called for id: {}", note_id);
     let mut store = NotesStore::load(&app);
     if let Some(note) = store.notes.iter_mut().find(|n| n.id == note_id) {
         note.window_state.x = x;
@@ -98,11 +98,11 @@ fn update_window_state(
 
 #[tauri::command]
 async fn open_note_window(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
-    log::info!("Starting open_note_window for id: {}", note_id);
+    log::debug!("Starting open_note_window for id: {}", note_id);
 
     // Check if window already exists
     if app.get_webview_window(&note_id).is_some() {
-        log::info!("Window {} already exists", note_id);
+        log::debug!("Window {} already exists", note_id);
         return Ok(());
     }
 
@@ -124,7 +124,7 @@ async fn open_note_window(app: tauri::AppHandle, note_id: String) -> Result<(), 
     };
 
     let url = WebviewUrl::App(format!("note.html?id={}", note_id).into());
-    log::info!("Building window for note: {}", title);
+    log::debug!("Building window for note: {}", title);
 
     WebviewWindowBuilder::new(&app, &note_id, url)
         .title(&title)
@@ -147,13 +147,13 @@ async fn open_note_window(app: tauri::AppHandle, note_id: String) -> Result<(), 
 }
 
 fn load_dev_icon() -> Result<Image<'static>, String> {
-    log::info!("Loading dev icon bytes");
+    log::debug!("Loading dev icon bytes");
     let icon_bytes = include_bytes!("../icons/dev-icon.png");
     Image::from_bytes(icon_bytes).map_err(|e| e.to_string())
 }
 
 fn set_window_icon(window: &tauri::WebviewWindow) -> Result<(), String> {
-    log::info!("Setting window icon for window: {}", window.label());
+    log::debug!("Setting window icon for window: {}", window.label());
     let icon = load_dev_icon()?;
     window.set_icon(icon).map_err(|e| e.to_string())
 }
@@ -199,7 +199,7 @@ pub fn run() {
                         .build(),
                 )?;
 
-                log::info!("Setup: Setting dev icon for existing windows");
+                log::debug!("Setup: Setting dev icon for existing windows");
                 // Set dev icon for all windows
                 let app_handle = app.handle();
                 for window in app_handle.webview_windows().values() {

@@ -2,7 +2,7 @@ use url::Url;
 
 #[tauri::command]
 pub fn open_external_url(url: String) -> Result<(), String> {
-    log::info!("Attempting to open URL: {}", url);
+    log::debug!("Attempting to open URL: {}", url);
     if let Err(e) = opener::open_browser(&url) {
         log::warn!(
             "opener::open_browser failed: {}. Trying WSL fallback via powershell.exe",
@@ -37,8 +37,8 @@ pub fn frontend_log(level: String, message: String) {
 
 #[tauri::command]
 pub async fn start_google_auth_server() -> Result<String, String> {
-    log::info!("Command: start_google_auth_server called");
-    log::info!("Attempting to bind auth server to 0.0.0.0:51737");
+    log::debug!("Command: start_google_auth_server called");
+    log::debug!("Attempting to bind auth server to 0.0.0.0:51737");
     let server = tiny_http::Server::http("0.0.0.0:51737").map_err(|e| {
         log::error!("Failed to start auth server: {}", e);
         format!("Failed to start server: {}", e)
@@ -83,7 +83,7 @@ pub async fn start_google_auth_server() -> Result<String, String> {
                 request.respond(response).ok();
                 return Err("Authentication failed or was denied.".to_string());
             } else {
-                log::info!("Auth server: Non-auth request received: {}", url_str);
+                log::debug!("Auth server: Non-auth request received: {}", url_str);
                 // Fallback for favicon.ico or other requests
                 let response = tiny_http::Response::from_string("Waiting for authentication...");
                 request.respond(response).ok();

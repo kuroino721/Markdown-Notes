@@ -8,6 +8,7 @@ const CLIENT_ID_DESKTOP = import.meta.env.VITE_GOOGLE_CLIENT_ID_DESKTOP;
 const CLIENT_SECRET_DESKTOP = import.meta.env.VITE_GOOGLE_CLIENT_SECRET_DESKTOP;
 const CLIENT_ID_WEB = import.meta.env.VITE_GOOGLE_CLIENT_ID_WEB;
 const API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
 const SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
@@ -69,8 +70,9 @@ export const GoogleDriveService = {
      */
     async init(): Promise<void> {
         const clientId = getClientId();
+        console.log('[DEBUG] GoogleDriveService: init() called. CLIENT_ID:', clientId);
         if (!clientId || clientId.includes('YOUR_CLIENT_ID')) {
-            console.warn('Google Drive Client ID is not set for this environment. Please check your .env file.');
+            console.warn('[DEBUG] GoogleDriveService: Google Drive Client ID is not set. Please check your .env file or environment variables.');
             return;
         }
 
@@ -122,14 +124,17 @@ export const GoogleDriveService = {
 
             const pollScripts = setInterval(() => {
                 if (typeof gapi !== 'undefined' && gapi.load && !gapiInited) {
+                    console.log('[DEBUG] GoogleDriveService: gapi loaded, calling load("client")');
                     this.checkRedirectResponse();
                     gapi.load('client', initGapi);
                 }
                 if (typeof google !== 'undefined' && google.accounts && !gisInited) {
+                    console.log('[DEBUG] GoogleDriveService: google identity services loaded, initing GIS');
                     initGis();
                 }
 
                 if (gapiInited && gisInited) {
+                    console.log('[DEBUG] GoogleDriveService: Both GAPI and GIS inited');
                     clearInterval(pollScripts);
                 }
             }, 100);
@@ -138,7 +143,7 @@ export const GoogleDriveService = {
             setTimeout(() => {
                 clearInterval(pollScripts);
                 if (!gapiInited || !gisInited) {
-                    console.error('Google API scripts failed to load in time');
+                    console.error('[DEBUG] GoogleDriveService: Google API scripts failed to load in time', { gapiInited, gisInited });
                     resolve(); // Resolve anyway to avoid hanging
                 }
             }, 10000);
@@ -183,8 +188,9 @@ export const GoogleDriveService = {
 
         // Use Authorization Code Flow with PKCE for Tauri
         if (isTauri() && !silent) {
-            console.log('[DEBUG] GoogleDriveService: Using Authorization Code Flow (PKCE) for Tauri Desktop');
             const redirectUri = 'http://localhost:51737/';
+            await invoke('frontend_log', { level: 'info', message: '[SYNC] Starting Auth (PKCE) for WSL2/Desktop' });
+            await invoke('frontend_log', { level: 'info', message: `[SYNC] redirect_uri set to: ${redirectUri}` });
 
             try {
                 // 1. Generate PKCE
@@ -218,6 +224,7 @@ export const GoogleDriveService = {
                 console.log('[DEBUG] GoogleDriveService: Code received from loopback');
 
                 // 5. Exchange code for token
+                await invoke('frontend_log', { level: 'info', message: '[SYNC] Exchanging code for token...' });
                 const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -231,19 +238,26 @@ export const GoogleDriveService = {
                     }),
                 });
 
+                await invoke('frontend_log', { level: 'info', message: `[SYNC] Token exchange status: ${tokenResponse.status}` });
                 const tokenData = await tokenResponse.json();
+
                 if (tokenData.error) {
+                    await invoke('frontend_log', { level: 'error', message: `[SYNC] Token exchange error response: ${JSON.stringify(tokenData)}` });
                     throw new Error(`Token exchange failed: ${tokenData.error_description || tokenData.error}`);
                 }
 
                 const accessToken = tokenData.access_token;
                 if (accessToken) {
+                    await invoke('frontend_log', { level: 'info', message: '[SYNC] Token exchange successful' });
                     gapi.client.setToken({ access_token: accessToken });
                     localStorage.setItem('markdown_editor_gdrive_enabled', 'true');
                     return { access_token: accessToken };
+                } else {
+                    await invoke('frontend_log', { level: 'error', message: `[SYNC] No access token in response: ${JSON.stringify(tokenData)}` });
+                    throw new Error('No access token received from Google');
                 }
-            } catch (e) {
-                console.error('[DEBUG] GoogleDriveService: Auth failed:', e);
+            } catch (e: any) {
+                await invoke('frontend_log', { level: 'error', message: `[SYNC] Auth flow exception: ${e.message || e}` });
                 throw e;
             }
             return new Promise(() => { });

@@ -1,33 +1,48 @@
 ---
 name: Tauri Google OAuth
-description: Tauri における Google OAuth の「Desktop App」クライアントタイプ利用、PKCE フロー、および Windows での URL 切断問題を回避するベストプラクティス。
+description:
+  Tauri における Google OAuth の「Desktop App」クライアントタイプ利用、PKCE
+  フロー、および Windows での URL 切断問題を回避するベストプラクティス。
 ---
 
 # Tauri Google OAuth 実装ガイド
 
-Tauri デスクトップアプリで Google OAuth を実装する際、WebView の制限や OS ごとのシェルの挙動により、多くの落とし穴があります。このスキルは、それらを回避し安定した認証を実現するための最新の手法をまとめます。
+Tauri デスクトップアプリで Google
+OAuth を実装する際、WebView の制限や OS ごとのシェルの挙動により、多くの落とし穴があります。このスキルは、それらを回避し安定した認証を実現するための最新の手法をまとめます。
 
 ## 1. クライアントタイプとフローの選択
 
-デスクトップアプリ（Tauri）では、従来の「ウェブ アプリケーション」タイプや「インプリシットフロー（token）」は `invalid_request` (Error 400) の原因となります。
+デスクトップアプリ（Tauri）では、従来の「ウェブ アプリケーション」タイプや「インプリシットフロー（token）」は
+`invalid_request` (Error 400) の原因となります。
 
-- **クライアントタイプ**: **「デスクトップ アプリ (Desktop App)」** を使用します。
-- **認可フロー**: **「認可コードフロー (Authorization Code Flow) + PKCE」** を採用します。
-- **リダイレクト URI**: `http://localhost:51737/` などのループバックアドレスを使用します（`tauri.localhost` は Google によって禁止されています）。
+- **クライアントタイプ**: **「デスクトップ アプリ (Desktop App)」**
+  を使用します。
+- **認可フロー**: **「認可コードフロー (Authorization Code Flow) + PKCE」**
+  を採用します。
+- **リダイレクト URI**: `http://localhost:51737/`
+  などのループバックアドレスを使用します（`tauri.localhost`
+  は Google によって禁止されています）。
 
 ## 2. Windows での URL 切断問題 (重要)
 
-Tauri (Rust) からシステムブラウザを起動する際、Windows の標準的な `cmd /C start <URL>` 実行では、URL に含まれる `&` 記号がコマンド区切りとして解釈され、URL が途中で途切れる（`response_type` 等のパラメータが消失する）問題が発生します。
+Tauri (Rust) からシステムブラウザを起動する際、Windows の標準的な
+`cmd /C start <URL>` 実行では、URL に含まれる `&`
+記号がコマンド区切りとして解釈され、URL が途中で途切れる（`response_type`
+等のパラメータが消失する）問題が発生します。
 
 ### 解決策: `opener` クレートの使用
-シェルを介さず OS API を直接呼ぶことで、特殊文字を含む長い URL を安全にブラウザへ渡せます。
+
+シェルを介さず OS
+API を直接呼ぶことで、特殊文字を含む長い URL を安全にブラウザへ渡せます。
 
 **Rust (Cargo.toml)**
+
 ```toml
 opener = "0.7"
 ```
 
 **Rust (lib.rs / auth.rs)**
+
 ```rust
 #[tauri::command]
 pub fn open_external_url(url: String) -> Result<(), String> {
@@ -37,7 +52,8 @@ pub fn open_external_url(url: String) -> Result<(), String> {
 
 ## 3. PKCE (Proof Key for Code Exchange) の実装
 
-フロントエンドで `code_challenge` と `code_verifier` を生成し、認可コードとアクセストークンの交換時の安全性を確保します。
+フロントエンドで `code_challenge` と `code_verifier`
+を生成し、認可コードとアクセストークンの交換時の安全性を確保します。
 
 ```typescript
 async generatePKCE() {
@@ -58,19 +74,21 @@ async generatePKCE() {
 
 ```typescript
 const isTauri = () => !!(window.__TAURI_INTERNALS__ || window.__TAURI__);
-const getClientId = () => isTauri() ? VITE_CLIENT_ID_DESKTOP : VITE_CLIENT_ID_WEB;
+const getClientId = () =>
+  isTauri() ? VITE_CLIENT_ID_DESKTOP : VITE_CLIENT_ID_WEB;
 
 // signIn 関数内
 if (isTauri()) {
-    // 認可コードフロー + PKCE
+  // 認可コードフロー + PKCE
 } else {
-    // インプリシットフロー (GIS SDK 等)
+  // インプリシットフロー (GIS SDK 等)
 }
 ```
 
 ## 5. ループバックサーバーの簡略化
 
-認可コードフローでは、Rust 側のサーバーはクエリパラメータから `code` を抽出するだけで済みます。
+認可コードフローでは、Rust 側のサーバーはクエリパラメータから `code`
+を抽出するだけで済みます。
 
 ```rust
 if url.contains("code=") {
@@ -79,7 +97,66 @@ if url.contains("code=") {
 ```
 
 ## 6. チェックリスト
+
 - [ ] Google Cloud Console で「デスクトップ アプリ」として ID を作成したか？
-- [ ] `http://localhost:<PORT>/` が承認済みリダイレクト先として登録されているか？
-- [ ] Windows で URL が `&` の位置で途切れていないか（`opener` を使っているか）？
-- [ ] PKCE の `code_challenge` と `code_verifier` が正しく交換に利用されているか？
+- [ ] `http://localhost:<PORT>/`
+      が承認済みリダイレクト先として登録されているか？
+- [ ] Windows で URL が `&` の位置で途切れていないか（`opener`
+      を使っているか）？
+- [ ] PKCE の `code_challenge` と `code_verifier`
+      が正しく交換に利用されているか？
+
+## 7. WSL2 での注意点 (重要)
+
+WSL2 で実行する場合、Windows ホストのブラウザと WSL2 内の Tauri プロセス間でネットワークやプロセスの通信に制限が発生します。
+
+### A. リダイレクト URI とサーバーのバインド
+
+- **解決策**: リダイレクト URI を `localhost` に指定しつつ、Rust 側のサーバーは
+  **`0.0.0.0:51737`**
+  にバインドします。これにより、Windows 側のブラウザからのパケットを確実に WSL2 内で受け取れます。
+- **Google Console 設定**: `http://localhost:51737/` と
+  `http://127.0.0.1:51737/`
+  の両方をリダイレクト URI に登録することを推奨します。
+
+### B. ブラウザ起動の失敗 (WSL2 Fallback)
+
+`opener`
+クレートが WSL2 内でブラウザを見つけられない場合があるため、`powershell.exe`
+を使ったフォールバックを実装します。
+
+```rust
+#[tauri::command]
+pub fn open_external_url(url: String) -> Result<(), String> {
+    if let Err(_) = opener::open_browser(&url) {
+        // WSL2 Fallback: Windows 側のブラウザを呼び出す
+        std::process::Command::new("powershell.exe")
+            .arg("-NoProfile")
+            .arg("-Command")
+            .arg(format!("Start-Process '{}'", url.replace("'", "''")))
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+```
+
+### C. ログの可視化 (Terminal Logging)
+
+WSL2 環境では WebView のデバッグコンソールが見づらいため、JS のログを Rust 経由でターミナルに転送するとデバッグ効率が劇的に向上します。
+
+```rust
+// Rust: ログ転送コマンド
+#[tauri::command]
+pub fn frontend_log(level: String, message: String) {
+    match level.as_str() {
+        "error" => log::error!("[JS] {}", message),
+        _ => log::info!("[JS] {}", message),
+    }
+}
+```
+
+```typescript
+// TS: 重要なポイントで呼び出し
+await invoke("frontend_log", { level: "info", message: "[SYNC] Start..." });
+```

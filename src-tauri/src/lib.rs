@@ -185,6 +185,7 @@ pub fn run() {
             save_all_notes,
             auth::start_google_auth_server,
             auth::open_external_url,
+            auth::frontend_log,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

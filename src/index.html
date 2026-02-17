@@ -10,6 +10,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap"
         rel="stylesheet">
+    <meta name="theme-color" content="#2e3440">
+    <link rel="apple-touch-icon" href="/pwa-192x192.png">
     <style>
         /* Main window specific styles */
         body {
@@ -600,6 +602,10 @@
         </div>
     </div>
     <script type="module" src="/main.ts"></script>
+    <script type="module">
+        import { registerSW } from 'virtual:pwa-register'
+        registerSW({ immediate: true })
+    </script>
 </body>
 
 </html>

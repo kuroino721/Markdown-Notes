@@ -358,6 +358,10 @@
         </footer>
     </div>
     <script type="module" src="/note.ts"></script>
+    <script type="module">
+        import { registerSW } from 'virtual:pwa-register'
+        registerSW({ immediate: true })
+    </script>
 </body>
 
 </html>

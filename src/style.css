@@ -696,3 +696,108 @@ body {
 .note-editor li[data-checked="true"]::before {
   content: "☑ ";
 }
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+    margin-bottom: 24px;
+    gap: 16px;
+  }
+
+  .header-left {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .search-container {
+    width: 100% !important;
+  }
+
+  .header-right {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+  }
+
+  .btn-new-note,
+  .btn-action,
+  .btn-secondary {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 12px;
+    font-size: 13px;
+    height: 48px; /* Slightly taller for touch */
+  }
+
+  .notes-grid {
+    grid-template-columns: 1fr; /* Single column on mobile */
+    gap: 16px;
+  }
+
+  .note-card {
+    min-height: 140px;
+    padding: 16px;
+  }
+
+  .app-container {
+    padding: 16px;
+  }
+
+  /* Editor specific mobile adjustments */
+  .editor-container {
+    padding: 16px 12px;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .toolbar-center {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+    font-size: 12px;
+  }
+
+  .toolbar-left,
+  .toolbar-right {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .toolbar button {
+    padding: 8px 12px;
+    height: 40px;
+  }
+}
+
+/* Touch improvements */
+@media (pointer: coarse) {
+  button,
+  .note-card,
+  .selection-checkbox {
+    cursor: default;
+  }
+
+  .note-card:hover {
+    transform: none; /* Disable hover title lift on touch */
+  }
+
+  .delete-btn {
+    opacity: 1 !important; /* Always show delete button on touch */
+  }
+
+  /* Increase touch target for interactive elements */
+  .color-option {
+    width: 32px;
+    height: 32px;
+  }
+}

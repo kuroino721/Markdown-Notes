@@ -80,6 +80,20 @@ async function initEditor(content: string) {
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     const { key, shiftKey } = event;
                     if (key === 'Enter' && !shiftKey) {
+                        // Check if we are in a list item
+                        if (editorView) {
+                            const { state } = editorView;
+                            const { selection } = state;
+                            const { $from } = selection;
+                            // Check ancestors for list_item
+                            for (let i = $from.depth; i > 0; i--) {
+                                const node = $from.node(i);
+                                if (node.type.name === 'list_item') {
+                                    return false; // Let default handler handle list item creation
+                                }
+                            }
+                        }
+
                         // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
                         ctx.get(callCommand)(insertHardbreakCommand);
                         return true;

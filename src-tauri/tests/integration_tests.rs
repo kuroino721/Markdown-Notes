@@ -85,3 +85,32 @@ fn test_load_non_existent_file() {
     let store = NotesStore::load_from_path(&file_path);
     assert!(store.notes.is_empty());
 }
+
+#[test]
+fn test_concurrent_addition_to_store() {
+    use std::sync::{Arc, Mutex};
+    use std::thread;
+
+    let mut store = NotesStore::default();
+    let store = Arc::new(Mutex::new(store));
+    let mut handles = vec![];
+
+    // Spawn 10 threads to add notes concurrently
+    for i in 0..10 {
+        let store = Arc::clone(&store);
+        let handle = thread::spawn(move || {
+            let mut note = Note::new();
+            note.title = format!("Thread {}", i);
+            let mut s = store.lock().unwrap();
+            s.add_note(note);
+        });
+        handles.push(handle);
+    }
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    let final_store = store.lock().unwrap();
+    assert_eq!(final_store.notes.len(), 10);
+}

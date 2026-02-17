@@ -199,7 +199,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         const iframe = document.getElementById('note-iframe') as HTMLIFrameElement;
 
         if (sidePanel && iframe) {
-            iframe.src = `note.html?id=${noteId}&sidebar=true`;
+            // Robustly find the directory of the current page to construct the sibling URL
+            const url = new URL('note.html', window.location.href);
+            url.searchParams.set('id', noteId);
+            url.searchParams.set('sidebar', 'true');
+            iframe.src = url.href;
             sidePanel.classList.remove('hidden');
         }
     });

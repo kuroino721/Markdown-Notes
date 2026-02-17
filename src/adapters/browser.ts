@@ -189,7 +189,9 @@ export const BrowserAdapter: Adapter = {
 
         if (isMobile) {
             // On mobile, direct navigation is better than iframe to avoid recursion and auth issues
-            window.location.href = `note.html?id=${id}`;
+            const url = new URL('note.html', window.location.href);
+            url.searchParams.set('id', id);
+            window.location.href = url.toString();
         } else {
             // In desktop browser, we still like the side panel
             const event = new CustomEvent('open-note-sidebar', { detail: { id } });
@@ -215,7 +217,8 @@ export const BrowserAdapter: Adapter = {
             if (window.history.length > 1) {
                 window.history.back();
             } else {
-                window.location.href = './';
+                const url = new URL('index.html', window.location.href);
+                window.location.href = url.toString();
             }
         }
     },

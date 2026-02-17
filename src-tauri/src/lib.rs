@@ -2,58 +2,56 @@ pub mod auth;
 pub mod notes;
 
 use notes::{Note, NotesStore};
+use std::sync::Mutex;
 use tauri::image::Image;
-use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{Emitter, Manager, State, WebviewUrl, WebviewWindowBuilder};
+
+pub struct NotesState(pub Mutex<NotesStore>);
 
 #[tauri::command]
-fn create_note(app: tauri::AppHandle) -> Result<Note, String> {
+fn create_note(app: tauri::AppHandle, state: State<'_, NotesState>) -> Result<Note, String> {
     log::debug!("Command: create_note called");
-    let mut store = NotesStore::load(&app);
+    let mut store = state.0.lock().map_err(|e| e.to_string())?;
     let note = Note::new();
     store.add_note(note.clone());
     store.save(&app)?;
-
-    // Temporarily disabled window creation to test
-    // let note_id = note.id.clone();
-    // let url = WebviewUrl::App(format!("note.html?id={}", note_id).into());
-    // let _window = WebviewWindowBuilder::new(&app, &note_id, url)
-    //     .title("ノート")
-    //     .inner_size(300.0, 400.0)
-    //     .position(note.window_state.x as f64, note.window_state.y as f64)
-    //     .decorations(true)
-    //     .resizable(true)
-    //     .build()
-    //     .map_err(|e| e.to_string())?;
-
     Ok(note)
 }
 
 #[tauri::command]
-fn get_all_notes(app: tauri::AppHandle) -> Vec<Note> {
+fn get_all_notes(state: State<'_, NotesState>) -> Vec<Note> {
     log::debug!("Command: get_all_notes called");
-    let store = NotesStore::load(&app);
-    store.notes
+    let store = state.0.lock().unwrap();
+    store.notes.clone()
 }
 
 #[tauri::command]
-fn get_note(app: tauri::AppHandle, note_id: String) -> Option<Note> {
+fn get_note(state: State<'_, NotesState>, note_id: String) -> Option<Note> {
     log::debug!("Command: get_note called for id: {}", note_id);
-    let store = NotesStore::load(&app);
+    let store = state.0.lock().unwrap();
     store.get_note(&note_id).cloned()
 }
 
 #[tauri::command]
-fn save_note(app: tauri::AppHandle, note: Note) -> Result<(), String> {
+fn save_note(
+    app: tauri::AppHandle,
+    state: State<'_, NotesState>,
+    note: Note,
+) -> Result<(), String> {
     log::debug!("Command: save_note called for id: {}", note.id);
-    let mut store = NotesStore::load(&app);
+    let mut store = state.0.lock().map_err(|e| e.to_string())?;
     store.update_note(note);
     store.save(&app)
 }
 
 #[tauri::command]
-fn delete_note(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
+fn delete_note(
+    app: tauri::AppHandle,
+    state: State<'_, NotesState>,
+    note_id: String,
+) -> Result<(), String> {
     log::debug!("Command: delete_note called for id: {}", note_id);
-    let mut store = NotesStore::load(&app);
+    let mut store = state.0.lock().map_err(|e| e.to_string())?;
     store.delete_note(&note_id);
     store.save(&app)?;
 
@@ -66,12 +64,16 @@ fn delete_note(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn save_all_notes(app: tauri::AppHandle, notes: Vec<Note>) -> Result<(), String> {
+fn save_all_notes(
+    app: tauri::AppHandle,
+    state: State<'_, NotesState>,
+    notes: Vec<Note>,
+) -> Result<(), String> {
     log::debug!(
         "Command: save_all_notes called (bulk save of {} notes)",
         notes.len()
     );
-    let mut store = NotesStore::load(&app);
+    let mut store = state.0.lock().map_err(|e| e.to_string())?;
     store.notes = notes;
     store.save(&app)
 }
@@ -79,6 +81,7 @@ fn save_all_notes(app: tauri::AppHandle, notes: Vec<Note>) -> Result<(), String>
 #[tauri::command]
 fn update_window_state(
     app: tauri::AppHandle,
+    state: State<'_, NotesState>,
     note_id: String,
     x: i32,
     y: i32,
@@ -86,7 +89,7 @@ fn update_window_state(
     height: u32,
 ) -> Result<(), String> {
     log::debug!("Command: update_window_state called for id: {}", note_id);
-    let mut store = NotesStore::load(&app);
+    let mut store = state.0.lock().map_err(|e| e.to_string())?;
     if let Some(note) = store.notes.iter_mut().find(|n| n.id == note_id) {
         note.window_state.x = x;
         note.window_state.y = y;
@@ -97,7 +100,11 @@ fn update_window_state(
 }
 
 #[tauri::command]
-async fn open_note_window(app: tauri::AppHandle, note_id: String) -> Result<(), String> {
+async fn open_note_window(
+    app: tauri::AppHandle,
+    state: State<'_, NotesState>,
+    note_id: String,
+) -> Result<(), String> {
     log::debug!("Starting open_note_window for id: {}", note_id);
 
     // Check if window already exists
@@ -108,7 +115,7 @@ async fn open_note_window(app: tauri::AppHandle, note_id: String) -> Result<(), 
 
     // Retrieve note data and drop store immediately to avoid deadlock during window creation
     let (title, width, height, x, y) = {
-        let store = NotesStore::load(&app);
+        let store = state.0.lock().map_err(|e| e.to_string())?;
         if let Some(note) = store.get_note(&note_id) {
             (
                 note.title.clone(),
@@ -206,6 +213,10 @@ pub fn run() {
                     let _ = set_window_icon(window);
                 }
             }
+
+            // Manage NotesStore state
+            let store = NotesStore::load(app.handle());
+            app.manage(NotesState(Mutex::new(store)));
 
             // Get command line arguments and send file path to frontend
             let args: Vec<String> = std::env::args().collect();

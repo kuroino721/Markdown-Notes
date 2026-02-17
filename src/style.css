@@ -801,3 +801,30 @@ body {
     height: 32px;
   }
 }
+
+/* Recursion protection: hide main UI elements if the app is loaded inside an iframe (sidebar) */
+@media screen {
+  body:has(iframe) {
+    /* Parent page */
+  }
+
+  /* If this page itself is inside an iframe, hide the sidebar and search UI */
+  html:has(body) {
+    /* Standard check for iframe */
+  }
+}
+
+/* Use a simpler approach for iframe detection if :has is not supported */
+body.is-in-iframe .app-header,
+body.is-in-iframe .note-side-panel,
+body.is-in-iframe .btn-new-note {
+  display: none !important;
+}
+
+body.is-in-iframe .notes-grid {
+  display: none !important;
+}
+
+body.is-in-iframe #empty-state {
+  display: none !important;
+}

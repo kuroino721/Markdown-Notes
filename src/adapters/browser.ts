@@ -189,8 +189,7 @@ export const BrowserAdapter: Adapter = {
 
         if (isMobile) {
             // On mobile, direct navigation is better than iframe to avoid recursion and auth issues
-            const baseUrl = (import.meta as any).env.BASE_URL || '/';
-            window.location.href = `${baseUrl}note.html?id=${id}`;
+            window.location.href = `note.html?id=${id}`;
         } else {
             // In desktop browser, we still like the side panel
             const event = new CustomEvent('open-note-sidebar', { detail: { id } });
@@ -213,11 +212,10 @@ export const BrowserAdapter: Adapter = {
             window.parent.postMessage({ type: 'close-sidebar' }, '*');
         } else {
             // If we navigated here directly (mobile PWA), go back to index.html
-            const baseUrl = (import.meta as any).env.BASE_URL || '/';
             if (window.history.length > 1) {
                 window.history.back();
             } else {
-                window.location.href = baseUrl;
+                window.location.href = './';
             }
         }
     },

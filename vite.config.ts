@@ -45,6 +45,9 @@ export default defineConfig({
             purpose: 'any maskable'
           }
         ]
+      },
+      workbox: {
+        ignoreURLParametersMatching: [/.*/],
       }
     })
   ],

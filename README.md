@@ -88,15 +88,53 @@ pnpm tauri build
 
 `src-tauri\target\release\bundle\msi\Markdown Editor_0.1.0_x64_en-US.msi`
 
+## デプロイ & PWA (GitHub Pages)
+
+本アプリは PWA 化されており、GitHub
+Pages にデプロイすることでスマホ（Android/iOS）からも利用可能です。
+
+### 1. GitHub プロジェクトの設定
+
+- **Secrets の設定**: `Settings > Secrets and variables > Actions`
+  に以下を追加してください。
+  - `VITE_GOOGLE_CLIENT_ID_WEB`: Google Cloud のウェブクライアントID
+  - `VITE_GOOGLE_API_KEY`: Google APIキー
+- **Pages の設定**: `Settings > Pages` の `Build and deployment > Source` を
+  **"GitHub Actions"** に変更してください。
+- **デプロイ**: `main` ブランチにプッシュすると、GitHub
+  Actions により自動的にデプロイされます。
+
+### 2. Google Cloud Console の設定
+
+GitHub Pages のドメインを許可リストに追加する必要があります。
+
+- **承認済みのリダイレクト URI**:
+  `https://<ユーザー名>.github.io/Markdown-Notes/`
+- **承認済みの JavaScript 生成元**: `https://<ユーザー名>.github.io`
+
+### 3. スマホでの利用開始 (PWA)
+
+1. デプロイされたプロジェクトの URL（例:
+   `https://kuroino721.github.io/Markdown-Notes/`）にブラウザでアクセスします。
+2. ブラウザのメニュー（三点リーダーなど）から **「ホーム画面に追加」** または
+   **「アプリをインストール」** を選択します。
+3. ホーム画面からアプリを起動し、Google ログインを行えば PC との同期が開始されます。
+
 ## 実装済み機能
 
-### 1. ライブプレビュー
+### 1. モバイル & PWA 対応
 
-- Split View（左:エディタ、右:プレビュー）
+- **レスポンシブ UI**: スマホに最適化された1カラムレイアウト。
+- **オフラインサポート**:
+  PWA により、インターネット未接続時でもノートの閲覧・編集が可能です。
+- **直接ナビゲーション**: モバイル環境では操作性を考慮し、サイドパネルではなく画面遷移による編集を採用しています。
+
+### 2. ライブプレビュー
+
 - 入力と同時にプレビュー更新
 - 対応Markdown: 見出し、太字、斜体、リスト、コードブロック、リンク
 
-### 2. キーボードショートカット（Typora互換）
+### 3. キーボードショートカット（Typora互換）
 
 | キー       | 機能           |
 | ---------- | -------------- |
@@ -108,7 +146,7 @@ pnpm tauri build
 | `Ctrl+O`   | ファイルを開く |
 | `Ctrl+1~6` | 見出しレベル   |
 
-### 3. ファイル操作
+### 4. ファイル操作
 
 - 開く/保存/名前を付けて保存
 - .md, .txt ファイル対応

@@ -9,6 +9,7 @@ import { insertHardbreakCommand } from '@milkdown/preset-commonmark';
 import { callCommand } from '@milkdown/utils';
 import { remarkStringifyOptionsCtx } from '@milkdown/core';
 import { Adapter, Note } from './adapters/types';
+import { splitListItem } from '@milkdown/prose/schema-list';
 import {
     AUTO_SAVE_DELAY_MS,
     STORAGE_KEY_LINE_HEIGHT,
@@ -89,7 +90,15 @@ async function initEditor(content: string) {
                             for (let i = $from.depth; i > 0; i--) {
                                 const node = $from.node(i);
                                 if (node.type.name === 'list_item') {
-                                    return false; // Let default handler handle list item creation
+                                    // Explicitly call splitListItem
+                                    // We need to use the raw ProseMirror command here
+                                    // splitListItem requires the list_item type from the schema
+                                    const { schema } = state;
+                                    const command = splitListItem(schema.nodes.list_item);
+                                    if (command(state, editorView.dispatch)) {
+                                        return true;
+                                    }
+                                    return false;
                                 }
                             }
                         }

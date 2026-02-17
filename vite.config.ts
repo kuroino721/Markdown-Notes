@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
   root: 'src',
-  base: '/Markdown-Notes/',
+  base: process.env.GITHUB_ACTIONS ? '/Markdown-Notes/' : '/',
   envDir: '../',
   build: {
     outDir: '../dist',

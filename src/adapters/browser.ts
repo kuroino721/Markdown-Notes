@@ -28,6 +28,11 @@ function saveStoredNotes(notes: Note[]): void {
 export const BrowserAdapter: Adapter = {
     // Sync operations
     async initSync(): Promise<void> {
+        // If in an iframe (sidebar), do NOT initialize sync independently to avoid redirect loops
+        if (window.self !== window.top) {
+            return;
+        }
+
         await initGoogleDrive();
         if (hasPreviousGoogleDriveSession()) {
             try {
@@ -179,9 +184,18 @@ export const BrowserAdapter: Adapter = {
 
     // UI/Window operations
     async openNote(id: string) {
-        // In browser, we dispatch a custom event to open in side panel instead of a new tab
-        const event = new CustomEvent('open-note-sidebar', { detail: { id } });
-        window.dispatchEvent(event);
+        // Feature detection for mobile/small screen or PWA standalone mode
+        const isMobile = window.innerWidth <= 768 || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+
+        if (isMobile) {
+            // On mobile, direct navigation is better than iframe to avoid recursion and auth issues
+            const baseUrl = (import.meta as any).env.BASE_URL || '/';
+            window.location.href = `${baseUrl}note.html?id=${id}`;
+        } else {
+            // In desktop browser, we still like the side panel
+            const event = new CustomEvent('open-note-sidebar', { detail: { id } });
+            window.dispatchEvent(event);
+        }
     },
 
     async confirm(message: string, _options: any = {}) {
@@ -193,13 +207,18 @@ export const BrowserAdapter: Adapter = {
     },
 
     async closeWindow() {
-        // In sidebar mode, we don't want to close the whole window
         const params = new URLSearchParams(window.location.search);
         if (params.get('sidebar') === 'true') {
-            // Tell parent window to close the side panel
+            // In sidebar mode (iframe), tell parent window to close the side panel
             window.parent.postMessage({ type: 'close-sidebar' }, '*');
         } else {
-            window.close();
+            // If we navigated here directly (mobile PWA), go back to index.html
+            const baseUrl = (import.meta as any).env.BASE_URL || '/';
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = baseUrl;
+            }
         }
     },
 

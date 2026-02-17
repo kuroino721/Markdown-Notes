@@ -199,7 +199,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         const iframe = document.getElementById('note-iframe') as HTMLIFrameElement;
 
         if (sidePanel && iframe) {
-            iframe.src = `note.html?id=${noteId}&sidebar=true`;
+            const baseUrl = (import.meta as any).env.BASE_URL || '/';
+            iframe.src = `${baseUrl}note.html?id=${noteId}&sidebar=true`;
             sidePanel.classList.remove('hidden');
         }
     });

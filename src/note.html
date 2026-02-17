@@ -49,7 +49,21 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+        }
+
+        .header-left-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             max-width: 70%;
+        }
+
+        .browser-only {
+            display: none;
+        }
+
+        body.is-browser:not(.is-sidebar) .browser-only {
+            display: flex;
         }
 
         .note-header .actions {
@@ -285,7 +299,16 @@
 <body>
     <div class="note-container">
         <header class="note-header" data-tauri-drag-region>
-            <span class="title" id="note-title">ノート</span>
+            <div class="header-left-actions">
+                <button id="btn-back" class="browser-only" title="戻る">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                </button>
+                <span class="title" id="note-title">ノート</span>
+            </div>
             <div class="actions">
                 <button id="btn-export" title="Markdownとして保存 (エクスポート)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"

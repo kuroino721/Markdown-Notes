@@ -438,6 +438,27 @@ function setupEventListeners() {
         });
     }
 
+    // Back button (browser mobile only)
+    const btnBack = document.getElementById('btn-back');
+    if (btnBack) {
+        // eslint-disable-next-line @typescript-eslint/no-misused-promises
+        btnBack.addEventListener('click', async () => {
+            if (adapter) await adapter.closeWindow();
+        });
+    }
+
+    // Context detection for CSS
+    const params = new URLSearchParams(window.location.search);
+    const isSidebar = params.get('sidebar') === 'true';
+    const isTauri = !!((window as any).__TAURI__ || (window as any).__TAURI_INTERNALS__);
+
+    if (!isTauri) {
+        document.body.classList.add('is-browser');
+        if (isSidebar) {
+            document.body.classList.add('is-sidebar');
+        }
+    }
+
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
         if (e.ctrlKey || e.metaKey) {

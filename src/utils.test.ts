@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
     escapeHtml,
     extractTitle,
@@ -8,6 +8,7 @@ import {
     getFileNameFromPath,
     findTableContext,
     canDeleteTableRow,
+    resolveRelativeUrl,
     DEFAULT_TITLE,
     MAX_TITLE_LENGTH,
     MAX_PREVIEW_LENGTH,
@@ -361,5 +362,42 @@ describe('canDeleteTableRow', () => {
         const rows = [{ id: 'h' }, { id: 'd1' }, { id: 'd2' }, { id: 'd3' }];
         const table = makeTable(rows);
         expect(canDeleteTableRow(table, rows[3])).toBe(true);
+    });
+});
+
+// ── resolveRelativeUrl ────────────────────────────────
+
+describe('resolveRelativeUrl', () => {
+    const originalLocation = window.location;
+
+    beforeEach(() => {
+        // @ts-ignore
+        delete window.location;
+        window.location = { ...originalLocation, origin: 'https://example.com' } as any;
+    });
+
+    afterEach(() => {
+        window.location = originalLocation;
+    });
+
+    it('resolves path with single slash base', () => {
+        expect(resolveRelativeUrl('note.html', { baseUrl: '/' })).toBe('https://example.com/note.html');
+    });
+
+    it('resolves path with subfolder base', () => {
+        expect(resolveRelativeUrl('note.html', { baseUrl: '/Markdown-Notes/' })).toBe('https://example.com/Markdown-Notes/note.html');
+    });
+
+    it('resolves path with subfolder base missing trailing slash', () => {
+        expect(resolveRelativeUrl('note.html', { baseUrl: '/Markdown-Notes' })).toBe('https://example.com/Markdown-Notes/note.html');
+    });
+
+    it('handles absolute-like paths by prefixing with base', () => {
+        expect(resolveRelativeUrl('sub/page.html', { baseUrl: '/app/' })).toBe('https://example.com/app/sub/page.html');
+    });
+
+    it('handles root-relative input path by ignoring base (URL standard behavior)', () => {
+        // /path is root-relative, so it ignores the /app/ base
+        expect(resolveRelativeUrl('/root.html', { baseUrl: '/app/' })).toBe('https://example.com/root.html');
     });
 });

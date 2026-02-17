@@ -139,3 +139,41 @@ export function canDeleteTableRow(tableNode: any, tableRowNode: any): boolean {
 
     return true;
 }
+
+/**
+ * Resolve a relative path to a robust URL using Vite's BASE_URL.
+ * This ensures that on platforms like GitHub Pages, the path is correctly resolved
+ * regardless of the current path's trailing slash.
+ * @param {string} path - Relative path (e.g., 'note.html')
+ * @returns {string} Fully resolved URL
+ */
+/**
+ * Resolve a relative path to a robust URL using Vite's BASE_URL or a provided base.
+ * This ensures that on platforms like GitHub Pages, the path is correctly resolved
+ * regardless of the current path's trailing slash.
+ * @param {string} path - Relative path (e.g., 'note.html')
+ * @param {object} options - Options including baseUrl override
+ * @returns {string} Fully resolved URL
+ */
+export function resolveRelativeUrl(path: string, options: { baseUrl?: string } = {}): string {
+    // import.meta.env.BASE_URL is set by Vite at build time.
+    // We allow an override for testing purposes.
+    const baseUrl = options.baseUrl || (import.meta as any).env.BASE_URL || '/';
+
+    // If it's already an absolute URL, return it
+    if (path.match(/^[a-z]+:\/\//i)) return path;
+
+    // If it's a root-relative path, just append it to origin
+    if (path.startsWith('/')) {
+        return new URL(path, window.location.origin).href;
+    }
+
+    // It's a relative path. Combine it with the normalized base URL.
+    // Ensure baseUrl starts and ends with a slash for consistent joining
+    let normalizedBase = baseUrl.startsWith('/') ? baseUrl : `/${baseUrl}`;
+    if (!normalizedBase.endsWith('/')) normalizedBase += '/';
+
+    // Join manually to avoid URL constructor's root-relative resolution
+    const fullPath = normalizedBase + path;
+    return new URL(fullPath, window.location.origin).href;
+}

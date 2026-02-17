@@ -1,5 +1,5 @@
 import { getAdapter } from './adapters/index.js';
-import { escapeHtml, renderMarkdown, getFileNameFromPath } from './utils.js';
+import { escapeHtml, renderMarkdown, getFileNameFromPath, resolveRelativeUrl } from './utils.js';
 import { Adapter } from './adapters/types';
 
 let adapter: Adapter | null = null;
@@ -200,7 +200,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (sidePanel && iframe) {
             // Robustly find the directory of the current page to construct the sibling URL
-            const url = new URL('note.html', window.location.href);
+            const url = new URL(resolveRelativeUrl('note.html'));
             url.searchParams.set('id', noteId);
             url.searchParams.set('sidebar', 'true');
             iframe.src = url.href;

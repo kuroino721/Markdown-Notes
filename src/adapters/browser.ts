@@ -13,6 +13,7 @@ import { SyncLogic } from './sync-logic.js';
 // @ts-ignore
 import { NOTE_COLOR_DEFAULT } from '../constants.js';
 import { Adapter, Note } from './types';
+import { resolveRelativeUrl } from '../utils.js';
 
 const STORAGE_KEY = 'markdown_editor_notes';
 
@@ -189,7 +190,7 @@ export const BrowserAdapter: Adapter = {
 
         if (isMobile) {
             // On mobile, direct navigation is better than iframe to avoid recursion and auth issues
-            const url = new URL('note.html', window.location.href);
+            const url = new URL(resolveRelativeUrl('note.html'));
             url.searchParams.set('id', id);
             window.location.href = url.toString();
         } else {
@@ -217,7 +218,7 @@ export const BrowserAdapter: Adapter = {
             if (window.history.length > 1) {
                 window.history.back();
             } else {
-                const url = new URL('index.html', window.location.href);
+                const url = new URL(resolveRelativeUrl('index.html'));
                 window.location.href = url.toString();
             }
         }

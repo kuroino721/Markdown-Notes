@@ -1,8 +1,15 @@
 #!/bin/bash
 
-# WSL Gateway IP
-GATEWAY_IP="172.21.0.1"
+# WSL Gateway IP を自動取得
+GATEWAY_IP=$(ip route show | grep -i default | awk '{ print $3}')
 CHROME_PATH="/mnt/c/Program Files/Google/Chrome/Application/chrome.exe"
+
+if [ -z "$GATEWAY_IP" ]; then
+    echo "Error: Gateway IP could not be detected."
+    exit 1
+fi
+
+echo "Detected Gateway IP: $GATEWAY_IP"
 
 echo "Starting Chrome with remote debugging..."
 "$CHROME_PATH" --remote-debugging-port=9222 --no-first-run --no-default-browser-check &

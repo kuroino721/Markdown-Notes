@@ -25,8 +25,9 @@ WSL2とWindowsホストのネットワーク分離により、WSL2上のプロ�
 WSL2からのポート9222への通信をWindows側へ転送し、ファイアウォールを許可します。
 
 ```powershell
-# WSLゲートウェイIPを確認 (WSLで `ip route show | grep default` を実行)
-$GATEWAY_IP = "172.21.0.1" # 例
+# WSLゲートウェイIPを確認
+GATEWAY_IP=$(ip route show | grep -i default | awk '{ print $3}')
+echo $GATEWAY_IP
 
 # ポートプロキシの設定
 netsh interface portproxy add v4tov4 listenport=9222 listenaddress=$GATEWAY_IP connectport=9222 connectaddress=127.0.0.1

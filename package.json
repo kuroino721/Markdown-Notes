@@ -9,12 +9,14 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
-    "test": "vitest run -c vite.config.ts"
+    "test": "vitest run -c vite.config.ts",
+    "test:e2e": "GITHUB_ACTIONS=true pnpm build && npx playwright test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tauri-apps/cli": "~2.10.0",
     "@types/node": "^25.2.3",
     "jimp": "^1.6.0",

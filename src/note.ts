@@ -7,7 +7,7 @@ import { setupTableAutoComplete } from './table-utils.js';
 import { listener, listenerCtx } from '@milkdown/plugin-listener';
 import { insertHardbreakCommand } from '@milkdown/preset-commonmark';
 import { callCommand } from '@milkdown/utils';
-import { remarkStringifyOptionsCtx } from '@milkdown/core';
+import { remarkStringifyOptionsCtx, remarkPluginsCtx, editorViewCtx } from '@milkdown/core';
 import { Adapter, Note } from './adapters/types';
 import { splitListItem } from '@milkdown/prose/schema-list';
 import {
@@ -73,49 +73,91 @@ async function initEditor(content: string) {
             },
         });
 
-        // Configure listener to intercept Enter and customize serialization
+        // Define a simple remark plugin to parse <br> tags back into break nodes
+        // This ensures round-trip persistence across mode switches
+        const remarkParseBreak = () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return (tree: any) => {
+                // console.log('Remark walking tree for <br> parsing');
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const walk = (node: any) => {
+                    if (node.type === 'html' && /<br\s*\/?>/i.test(node.value || '')) {
+                        // console.log('Found <br> HTML node, converting to break');
+                        node.type = 'break';
+                        delete node.value;
+                    }
+                    if (node.children) {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        node.children.forEach(walk);
+                    }
+                };
+                walk(tree);
+            };
+        };
+
+        // Configure editor
         crepeInstance.editor
             .config((ctx) => {
+                // Register the <br> parser plugin
+                ctx.update(remarkPluginsCtx, (prev: any) => [...(prev as any[]), remarkParseBreak]);
+
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
                 (ctx.get(listenerCtx) as any).keydown = (ctx: any, event: any) => {
                     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                     const { key, shiftKey } = event;
-                    if (key === 'Enter' && !shiftKey) {
-                        // Check if we are in a list item
+
+                    if (key !== 'Enter') return false;
+
+                    if (shiftKey) {
+                        // Shift+Enter: Insert hard break
+                        // Using direct insertion as it's more reliable than the command in some contexts (like tables)
                         if (editorView) {
-                            const { state } = editorView;
-                            const { selection } = state;
-                            const { $from } = selection;
-                            // Check ancestors for list_item
-                            for (let i = $from.depth; i > 0; i--) {
-                                const node = $from.node(i);
-                                if (node.type.name === 'list_item') {
-                                    // Explicitly call splitListItem
-                                    // We need to use the raw ProseMirror command here
-                                    // splitListItem requires the list_item type from the schema
-                                    const { schema } = state;
-                                    const command = splitListItem(schema.nodes.list_item);
-                                    if (command(state, editorView.dispatch)) {
-                                        return true;
-                                    }
-                                    return false;
-                                }
+                            const { state, dispatch } = editorView;
+                            const { schema, tr } = state;
+                            // The node name is 'hardbreak' in the schema
+                            const hardBreak = schema.nodes.hardbreak || schema.nodes.hard_break;
+                            if (hardBreak) {
+                                dispatch(tr.replaceSelectionWith(hardBreak.create()).scrollIntoView());
+                                return true;
                             }
                         }
-
-                        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+                        // Fallback to command if view is not ready
                         ctx.get(callCommand)(insertHardbreakCommand);
                         return true;
                     }
+
+                    // Normal Enter
+                    if (editorView) {
+                        const { state } = editorView;
+                        const { selection } = state;
+                        const { $from } = selection;
+
+                        // Check ancestors for list_item
+                        for (let i = $from.depth; i > 0; i--) {
+                            const node = $from.node(i);
+                            if (node.type.name === 'list_item') {
+                                // Explicitly call splitListItem
+                                const { schema } = state;
+                                const command = splitListItem(schema.nodes.list_item);
+                                if (command(state, editorView.dispatch)) {
+                                    return true;
+                                }
+                                return false;
+                            }
+                        }
+                    }
+
+                    // For normal Enter outside lists, let the default behavior handle it
                     return false;
                 };
 
-                // Override hard_break serialization to use backslash instead of spaces
+                // Override hard_break serialization to use <br> instead of backslash or spaces
+                // This enables visual line breaks in tables while keeping standard behavior elsewhere
                 ctx.update(remarkStringifyOptionsCtx, (prev) => ({
                     ...prev,
                     handlers: {
                         ...(prev.handlers || {}),
-                        break: () => '\\\n',
+                        break: () => '<br>',
                     },
                 }));
             })
@@ -126,7 +168,6 @@ async function initEditor(content: string) {
 
         // Get editor view after creation using editor.action
         try {
-            const { editorViewCtx } = await import('@milkdown/core');
             crepeInstance.editor.action((ctx) => {
                 editorView = ctx.get(editorViewCtx);
                 // console.log('Got editor view via action:', editorView);

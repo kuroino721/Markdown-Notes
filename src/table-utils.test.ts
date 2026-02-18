@@ -1,16 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
-import { handleTableDelete } from './table-utils';
+import { handleTableDelete, handleTableEnter } from './table-utils';
 
 // Mocks
 const mockDeleteRow = vi.fn();
 
-function createMockEvent(key: string, ctrlKey: boolean = false, metaKey: boolean = false) {
+function createMockEvent(key: string, ctrlKey: boolean = false, metaKey: boolean = false, shiftKey: boolean = false) {
     return {
         key,
         ctrlKey,
         metaKey,
+        shiftKey,
         preventDefault: vi.fn(),
         stopImmediatePropagation: vi.fn(),
+        stopPropagation: vi.fn(),
     } as unknown as KeyboardEvent;
 }
 
@@ -113,7 +115,7 @@ describe('handleTableDelete', () => {
         const tableNode = {
             type: { name: 'table' },
             childCount: 3,
-            child: (i: number) => headerRow
+            child: (_: number) => headerRow
         };
         const cellNode = { type: { name: 'table_cell' } };
 
@@ -148,6 +150,98 @@ describe('handleTableDelete', () => {
         expect(mockDeleteRow).not.toHaveBeenCalled();
         // Should not prevent default if we didn't handle it? 
         // Logic: if (!canDeleteTableRow) return; -> returns before preventDefault.
+        expect(event.preventDefault).not.toHaveBeenCalled();
+    });
+});
+
+describe('handleTableEnter', () => {
+    it('inserts <br> when Shift+Enter is pressed inside a table', async () => {
+        const event = createMockEvent('Enter', false, false, true);
+
+        // Mock table structure
+        const tableNode = { type: { name: 'table' } };
+        const rowNode = { type: { name: 'table_row' } };
+        const cellNode = { type: { name: 'table_cell' } };
+
+        const ancestors = [
+            { typeName: 'table', node: tableNode },
+            { typeName: 'table_row', node: rowNode },
+            { typeName: 'table_cell', node: cellNode }
+        ];
+
+        const editorView = createMockEditorView(ancestors);
+
+        // Mock Schema and hard_break node
+        const hardBreakValues = { create: vi.fn(() => 'hard_break_node') };
+        const schema = {
+            nodes: {
+                hard_break: hardBreakValues
+            }
+        };
+        editorView.state.schema = schema;
+
+        // Mock transaction
+        const tr = {};
+        editorView.state.tr = { replaceSelectionWith: vi.fn(() => tr) };
+        editorView.state.selection.$from.pos = 10;
+
+        const crepeInstance = createMockCrepeInstance();
+        const initEditor = vi.fn();
+
+        await handleTableEnter(
+            event,
+            () => editorView,
+            () => crepeInstance,
+            initEditor
+        );
+
+        expect(event.preventDefault).toHaveBeenCalled();
+        expect(hardBreakValues.create).toHaveBeenCalled();
+        expect(editorView.state.tr.replaceSelectionWith).toHaveBeenCalledWith('hard_break_node');
+        expect(editorView.dispatch).toHaveBeenCalledWith(tr);
+    });
+
+    it('does nothing when Shift+Enter is pressed outside a table', async () => {
+        const event = createMockEvent('Enter', false, false, true);
+
+        // Paragraph context
+        const pNode = { type: { name: 'paragraph' } };
+        const ancestors = [{ typeName: 'paragraph', node: pNode }];
+
+        const editorView = createMockEditorView(ancestors);
+
+        const crepeInstance = createMockCrepeInstance();
+        const initEditor = vi.fn();
+
+        await handleTableEnter(
+            event,
+            () => editorView,
+            () => crepeInstance,
+            initEditor
+        );
+
+        expect(event.preventDefault).not.toHaveBeenCalled();
+        // Since we are not in a table, we don't expect replaceSelectionWith to be called
+        // We can verify this implicitly or check mocks if we had them set up broadly
+    });
+
+    it('ignores Enter without modifiers', async () => {
+        const event = createMockEvent('Enter', false, false, false);
+        // We mock editorView but returning null to avoid "Enter pressed" logic going deep
+        // Or we can just verify it doesn't call insertText
+        const editorView = null;
+
+        const crepeInstance = createMockCrepeInstance();
+        const initEditor = vi.fn();
+
+        // We pass null editorView so the function logs "Editor view not available" and returns
+        await handleTableEnter(
+            event,
+            () => editorView,
+            () => crepeInstance,
+            initEditor
+        );
+
         expect(event.preventDefault).not.toHaveBeenCalled();
     });
 });

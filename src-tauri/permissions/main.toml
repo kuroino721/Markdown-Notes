@@ -1,0 +1,16 @@
+[[permission]]
+identifier = "allow-custom-commands"
+description = "Allows all custom commands defined in the app."
+commands.allow = [
+    "create_note",
+    "get_all_notes",
+    "get_note",
+    "save_note",
+    "delete_note",
+    "update_window_state",
+    "open_note_window",
+    "save_all_notes",
+    "start_google_auth_server",
+    "open_external_url",
+    "frontend_log"
+]

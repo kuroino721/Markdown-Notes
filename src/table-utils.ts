@@ -112,6 +112,40 @@ export async function handleTableEnter(
         return;
     }
 
+    if (event.shiftKey) {
+        // Shift+Enter: Insert line break (<br>) if inside a table
+        if (!editorView) return;
+
+        const { state, dispatch } = editorView;
+        const { selection } = state;
+        const { $from } = selection;
+
+        // Collect ancestor nodes
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const ancestors: Array<{ typeName: string; node: any }> = [];
+        for (let depth = $from.depth; depth > 0; depth--) {
+            const node = $from.node(depth);
+            ancestors.push({ typeName: node.type.name, node });
+        }
+
+        const { inTable } = findTableContext(ancestors);
+        if (inTable) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            const { nodes } = state.schema;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+            const node = nodes.hard_break.create();
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+            const tr = state.tr.replaceSelectionWith(node);
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+            dispatch(tr);
+            return;
+        }
+        // If not in table, let default behavior happen (handled by Milkdown/ProseMirror)
+        return;
+    }
+
     // Normal Enter: Check for table auto-complete pattern
     console.log('Enter pressed, checking for table pattern...');
 

@@ -22,7 +22,8 @@ function createMockEditorView(ancestors: Array<{ typeName: string, node: any }>)
             selection: {
                 $from: {
                     depth: ancestors.length,
-                    node: (depth: number) => ancestors[depth - 1].node // simplistic mock mapping
+                    node: (depth: number) => ancestors[depth - 1].node, // simplistic mock mapping
+                    get parent() { return (this as any).node((this as any).depth); }
                 }
             }
         },

@@ -84,10 +84,6 @@ pnpm tauri dev
 pnpm tauri build
 ```
 
-### インストーラ
-
-`src-tauri\target\release\bundle\msi\Markdown Editor_0.1.0_x64_en-US.msi`
-
 ## デプロイ & PWA (GitHub Pages)
 
 本アプリは PWA 化されており、GitHub
@@ -153,8 +149,6 @@ GitHub Pages のドメインを許可リストに追加する必要がありま�
 - 変更検知（タイトルに \* 表示）
 
 ## 今後の改善点
-
-### AIが生成
 
 1. **選択範囲へのフォーマット適用** - 現在はテキスト末尾に追加するのみ、カーソル位置に挿入すべき
 2. **シンタックスハイライト** - エディタ側のMarkdown構文ハイライト

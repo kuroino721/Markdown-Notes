@@ -20,7 +20,7 @@ export default defineConfig({
     ],
     // テスト実行前にプレビューサーバーを立ち上げる
     webServer: {
-        command: 'GITHUB_ACTIONS=true pnpm vite preview',
+        command: 'npx cross-env GITHUB_ACTIONS=true pnpm vite preview',
         url: 'http://localhost:4173/Markdown-Notes/',
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,

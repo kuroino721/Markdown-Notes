@@ -36,45 +36,51 @@ src/
 
 ## 環境構築
 
-開発環境をセットアップするには以下のコマンドを実行してください。
+開発環境をセットアップするには以下の手順を実行してください。
+本アプリのデスクトップ版（Tauri）のビルドには **Windowsネイティブ環境** が推奨されます（WSL2内では正常にウィンドウが立ち上がらない場合があります）。
+
+### 前提条件 (Windowsホスト)
+1. **Node.js** と **pnpm** (未インストールの場合は `corepack enable pnpm` を実行)
+2. **Rust ツールチェーン** (Windows用 `rustup-init.exe` からインストール)
+3. **Microsoft Visual Studio C++ Build Tools** (C++によるデスクトップ開発 + Windows 10/11 SDK付き)
+
+### インストールと起動
 
 ```powershell
-# 依存関係のインストール
+# リポジトリのクローン後、依存関係のインストール
 pnpm install
 
-# 開発サーバーの起動（ホットリロード有効）
+# 開発サーバーの起動（デスクトップアプリとして起動）
 pnpm tauri dev
 ```
 
 ## テストの実行
 
-### unit test
+### Web フロントエンド (E2Eテスト)
 
-    ### フロントエンド
+Playwright を使用してフロントエンドのE2Eテストを実行します。
+`cross-env` を利用しているため、Windows/Mac/Linux問わず同じコマンドで実行可能です。
 
-    Vitest を使用して `src/utils.js` などのユーティリティ関数のテストを実行します。
+```powershell
+pnpm run test:e2e
+```
 
-    ```powershell
-    pnpm test
-    ```
+### ユーティリティ (Unit Test)
 
-    ### バックエンド
+Vitest を使用してTypeScript/JavaScriptロジックの単体テストを実行します。
 
-    `src-tauri` ディレクトリ内の Rust コードのテストを実行します。
+```powershell
+pnpm test
+```
 
-    ```powershell
-    cd src-tauri
-    cargo test
-    ```
+### バックエンド (Rust Tauri)
 
-### integration test
+`src-tauri` ディレクトリ内のRustコードのテストを実行します。
 
-    `src-tauri` ディレクトリ内の Rust コードのテストを実行します。
-
-    ```powershell
-    cd src-tauri
-    cargo test --test integration_tests
-    ```
+```powershell
+cd src-tauri
+cargo test
+```
 
 ## ビルド
 

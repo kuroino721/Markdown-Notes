@@ -15,8 +15,8 @@ export const MAX_PREVIEW_LENGTH = 100;
  * @returns {string} Rendered HTML
  */
 export function renderMarkdown(content: string): string {
-    if (!content) return '';
-    return marked.parse(content) as string;
+  if (!content) return '';
+  return marked.parse(content) as string;
 }
 
 /**
@@ -25,14 +25,14 @@ export function renderMarkdown(content: string): string {
  * @returns {string} HTML-escaped text
  */
 export function escapeHtml(text: string): string {
-    const map: Record<string, string> = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;',
-    };
-    return String(text).replace(/[&<>"']/g, (c) => map[c]);
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  };
+  return String(text).replace(/[&<>"']/g, (c) => map[c]);
 }
 
 /**
@@ -42,14 +42,14 @@ export function escapeHtml(text: string): string {
  * @returns {string} Extracted title (max 50 chars) or default
  */
 export function extractTitle(content: string | null | undefined): string {
-    const lines = (content || '').split('\n');
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (trimmed) {
-            return trimmed.replace(/^#+\s*/, '').substring(0, MAX_TITLE_LENGTH);
-        }
+  const lines = (content || '').split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed) {
+      return trimmed.replace(/^#+\s*/, '').substring(0, MAX_TITLE_LENGTH);
     }
-    return DEFAULT_TITLE;
+  }
+  return DEFAULT_TITLE;
 }
 
 /**
@@ -59,12 +59,12 @@ export function extractTitle(content: string | null | undefined): string {
  * @returns {string} Plain text preview
  */
 export function getPreviewText(content: string | null | undefined): string {
-    return (content || '')
-        .replace(/^#+\s*/gm, '')
-        .replace(/\*\*|__|[*_`]/g, '')
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        .substring(0, MAX_PREVIEW_LENGTH);
+  return (content || '')
+    .replace(/^#+\s*/gm, '')
+    .replace(/\*\*|__|[*_`]/g, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .substring(0, MAX_PREVIEW_LENGTH);
 }
 
 /**
@@ -74,21 +74,21 @@ export function getPreviewText(content: string | null | undefined): string {
  * @returns {string} Cleaned markdown
  */
 export function removeExtraListBlankLines(markdown: string): string {
-    let prev;
-    do {
-        prev = markdown;
-        // Regex explanation:
-        // Group 1: Matches a list item (bullet or ordered) and its content.
-        // Group 2: Matches 2 or more newlines (the extra blank lines).
-        // Group 3: Matches the start of the next list item.
-        // Replacement: Keeps the first item ($1), adds a single newline (\n), and keeps the start of the next item ($3).
+  let prev;
+  do {
+    prev = markdown;
+    // Regex explanation:
+    // Group 1: Matches a list item (bullet or ordered) and its content.
+    // Group 2: Matches 2 or more newlines (the extra blank lines).
+    // Group 3: Matches the start of the next list item.
+    // Replacement: Keeps the first item ($1), adds a single newline (\n), and keeps the start of the next item ($3).
 
-        // Handle unordered lists (-, *, +)
-        markdown = markdown.replace(/^([ \t]*[-*+][ \t].*)(\n\n+)([ \t]*[-*+][ \t])/gm, '$1\n$3');
-        // Handle ordered lists (1., 2., etc.) and mixed list types
-        markdown = markdown.replace(/^([ \t]*\d+\.[ \t].*)(\n\n+)([ \t]*[-*+\d])/gm, '$1\n$3');
-    } while (markdown !== prev);
-    return markdown;
+    // Handle unordered lists (-, *, +)
+    markdown = markdown.replace(/^([ \t]*[-*+][ \t].*)(\n\n+)([ \t]*[-*+][ \t])/gm, '$1\n$3');
+    // Handle ordered lists (1., 2., etc.) and mixed list types
+    markdown = markdown.replace(/^([ \t]*\d+\.[ \t].*)(\n\n+)([ \t]*[-*+\d])/gm, '$1\n$3');
+  } while (markdown !== prev);
+  return markdown;
 }
 
 /**
@@ -98,7 +98,12 @@ export function removeExtraListBlankLines(markdown: string): string {
  * @returns {string} Filename without extension
  */
 export function getFileNameFromPath(filePath: string): string {
-    return filePath.split(/[/\\]/).pop()?.replace(/\.[^.]+$/, '') || '';
+  return (
+    filePath
+      .split(/[/\\]/)
+      .pop()
+      ?.replace(/\.[^.]+$/, '') || ''
+  );
 }
 
 /**
@@ -107,19 +112,23 @@ export function getFileNameFromPath(filePath: string): string {
  * @param {Array<{typeName: string, node: any}>} ancestors - Ancestor nodes from deepest to shallowest
  * @returns {{inTable: boolean, tableNode: any|null, tableRowNode: any|null}}
  */
-export function findTableContext(ancestors: Array<{ typeName: string; node: any }>): { inTable: boolean; tableNode: any | null; tableRowNode: any | null } {
-    let tableNode = null;
-    let tableRowNode = null;
-    for (const { typeName, node } of ancestors) {
-        if (typeName === 'table_row' && !tableRowNode) {
-            tableRowNode = node;
-        }
-        if (typeName === 'table') {
-            tableNode = node;
-            break;
-        }
+export function findTableContext(ancestors: Array<{ typeName: string; node: any }>): {
+  inTable: boolean;
+  tableNode: any | null;
+  tableRowNode: any | null;
+} {
+  let tableNode = null;
+  let tableRowNode = null;
+  for (const { typeName, node } of ancestors) {
+    if (typeName === 'table_row' && !tableRowNode) {
+      tableRowNode = node;
     }
-    return { inTable: !!tableNode, tableNode, tableRowNode };
+    if (typeName === 'table') {
+      tableNode = node;
+      break;
+    }
+  }
+  return { inTable: !!tableNode, tableNode, tableRowNode };
 }
 
 /**
@@ -132,12 +141,12 @@ export function findTableContext(ancestors: Array<{ typeName: string; node: any 
  * @returns {boolean} Whether the row can be deleted
  */
 export function canDeleteTableRow(tableNode: any, tableRowNode: any): boolean {
-    if (!tableNode || !tableRowNode) return false;
-    // Header row (first row) cannot be deleted
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-    if (tableRowNode === tableNode.child(0)) return false;
+  if (!tableNode || !tableRowNode) return false;
+  // Header row (first row) cannot be deleted
 
-    return true;
+  if (tableRowNode === tableNode.child(0)) return false;
+
+  return true;
 }
 
 /**
@@ -156,24 +165,24 @@ export function canDeleteTableRow(tableNode: any, tableRowNode: any): boolean {
  * @returns {string} Fully resolved URL
  */
 export function resolveRelativeUrl(path: string, options: { baseUrl?: string } = {}): string {
-    // import.meta.env.BASE_URL is set by Vite at build time.
-    // We allow an override for testing purposes.
-    const baseUrl = options.baseUrl || (import.meta as any).env.BASE_URL || '/';
+  // import.meta.env.BASE_URL is set by Vite at build time.
+  // We allow an override for testing purposes.
+  const baseUrl = options.baseUrl || (import.meta as any).env.BASE_URL || '/';
 
-    // If it's already an absolute URL, return it
-    if (path.match(/^[a-z]+:\/\//i)) return path;
+  // If it's already an absolute URL, return it
+  if (path.match(/^[a-z]+:\/\//i)) return path;
 
-    // If it's a root-relative path, just append it to origin
-    if (path.startsWith('/')) {
-        return new URL(path, window.location.origin).href;
-    }
+  // If it's a root-relative path, just append it to origin
+  if (path.startsWith('/')) {
+    return new URL(path, window.location.origin).href;
+  }
 
-    // It's a relative path. Combine it with the normalized base URL.
-    // Ensure baseUrl starts and ends with a slash for consistent joining
-    let normalizedBase = baseUrl.startsWith('/') ? baseUrl : `/${baseUrl}`;
-    if (!normalizedBase.endsWith('/')) normalizedBase += '/';
+  // It's a relative path. Combine it with the normalized base URL.
+  // Ensure baseUrl starts and ends with a slash for consistent joining
+  let normalizedBase = baseUrl.startsWith('/') ? baseUrl : `/${baseUrl}`;
+  if (!normalizedBase.endsWith('/')) normalizedBase += '/';
 
-    // Join manually to avoid URL constructor's root-relative resolution
-    const fullPath = normalizedBase + path;
-    return new URL(fullPath, window.location.origin).href;
+  // Join manually to avoid URL constructor's root-relative resolution
+  const fullPath = normalizedBase + path;
+  return new URL(fullPath, window.location.origin).href;
 }

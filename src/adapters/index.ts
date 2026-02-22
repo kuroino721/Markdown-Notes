@@ -4,26 +4,25 @@
 
 import { Adapter } from './types.js';
 
-// @ts-ignore
 export const isTauri = () => {
-    return typeof window !== 'undefined' && (window as any).isTauri === true;
+  return typeof window !== 'undefined' && (window as any).isTauri === true;
 };
 
 let adapter: Adapter | null = null;
 
 export async function getAdapter(): Promise<Adapter> {
-    if (adapter) return adapter;
+  if (adapter) return adapter;
 
-    if (isTauri()) {
-        const { TauriAdapter } = await import('./tauri.js');
-        adapter = TauriAdapter;
-    } else {
-        const { BrowserAdapter } = await import('./browser.js');
-        adapter = BrowserAdapter;
-    }
+  if (isTauri()) {
+    const { TauriAdapter } = await import('./tauri.js');
+    adapter = TauriAdapter;
+  } else {
+    const { BrowserAdapter } = await import('./browser.js');
+    adapter = BrowserAdapter;
+  }
 
-    if (!adapter) throw new Error('Failed to load adapter');
-    return adapter;
+  if (!adapter) throw new Error('Failed to load adapter');
+  return adapter;
 }
 
 // For convenience in places where we can't await easily (like event setups),

@@ -7,7 +7,7 @@ description: "Use this skill when the user asks to save, remember, recall, or or
 
 A persistent memory space for storing knowledge that survives across conversations.
 
-**Location:** `.claude/skills/agent-memory/memories/`
+**Location:** `.agent\skills\agent-memory\memories`
 
 ## Proactive Usage
 

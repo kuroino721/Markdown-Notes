@@ -1,0 +1,25 @@
+    Checking app v0.1.0 (D:\dev\Markdown-Notes\src-tauri)
+error: you should consider adding a `Default` implementation for `Note`
+  --> src\notes.rs:47:5
+   |
+47 | /     pub fn new() -> Self {
+48 | |         let now = Utc::now().to_rfc3339();
+49 | |         Self {
+50 | |             id: Uuid::new_v4().to_string(),
+...  |
+59 | |     }
+   | |_____^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#new_without_default
+   = note: `-D clippy::new-without-default` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::new_without_default)]`
+help: try adding this
+   |
+46 + impl Default for Note {
+47 +     fn default() -> Self {
+48 +         Self::new()
+49 +     }
+50 + }
+   |
+
+error: could not compile `app` (lib) due to 1 previous error

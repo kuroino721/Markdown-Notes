@@ -43,6 +43,12 @@ fn default_color() -> String {
     "#fef3c7".to_string()
 }
 
+impl Default for Note {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Note {
     pub fn new() -> Self {
         let now = Utc::now().to_rfc3339();

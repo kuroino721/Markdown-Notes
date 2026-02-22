@@ -11,22 +11,22 @@ import { remarkStringifyOptionsCtx, remarkPluginsCtx, editorViewCtx } from '@mil
 import { Adapter, Note } from './adapters/types';
 import { splitListItem } from '@milkdown/prose/schema-list';
 import {
-    AUTO_SAVE_DELAY_MS,
-    STORAGE_KEY_LINE_HEIGHT,
-    DEFAULT_LINE_HEIGHT,
-    DEFAULT_WINDOW_WIDTH,
-    DEFAULT_WINDOW_HEIGHT,
-    DEFAULT_WINDOW_X,
-    DEFAULT_WINDOW_Y,
-    NOTE_COLOR_DEFAULT,
-    MOVE_DEBOUNCE_MS,
-    RESIZE_DEBOUNCE_MS
+  AUTO_SAVE_DELAY_MS,
+  STORAGE_KEY_LINE_HEIGHT,
+  DEFAULT_LINE_HEIGHT,
+  DEFAULT_WINDOW_WIDTH,
+  DEFAULT_WINDOW_HEIGHT,
+  DEFAULT_WINDOW_X,
+  DEFAULT_WINDOW_Y,
+  NOTE_COLOR_DEFAULT,
+  MOVE_DEBOUNCE_MS,
+  RESIZE_DEBOUNCE_MS,
 } from './constants.js';
 
 let adapter: Adapter | null = null;
 
 // Global editor view reference
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 let editorView: any = null;
 
 // Table keyboard shortcut handlers are now in table-utils.js
@@ -41,608 +41,594 @@ let crepeInstance: Crepe | null = null;
 
 // Get note ID from URL
 function getNoteIdFromUrl(): string | null {
-    const params = new URLSearchParams(window.location.search);
-    return params.get('id');
+  const params = new URLSearchParams(window.location.search);
+  return params.get('id');
 }
 
 // Initialize Milkdown Crepe editor with content
 async function initEditor(content: string) {
-    const editorEl = document.getElementById('editor');
-    if (!editorEl) return;
-    editorEl.innerHTML = '';
+  const editorEl = document.getElementById('editor');
+  if (!editorEl) return;
+  editorEl.innerHTML = '';
 
-    // Destroy previous instance if exists
-    if (crepeInstance) {
-        try {
-            await crepeInstance.destroy();
-        } catch (e) {
-            console.warn('Failed to destroy previous editor:', e);
-        }
-        crepeInstance = null;
-    }
-
-    lastSavedContent = content || '';
-
+  // Destroy previous instance if exists
+  if (crepeInstance) {
     try {
-        // Create Milkdown Crepe instance
-        crepeInstance = new Crepe({
-            root: editorEl,
-            defaultValue: content || '',
-            features: {
-                [CrepeFeature.Latex]: false,  // Disable LaTeX for simplicity
-            },
-        });
+      await crepeInstance.destroy();
+    } catch (e) {
+      console.warn('Failed to destroy previous editor:', e);
+    }
+    crepeInstance = null;
+  }
 
-        // Define a simple remark plugin to parse <br> tags back into break nodes
-        // This ensures round-trip persistence across mode switches
-        const remarkParseBreak = () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            return (tree: any) => {
-                // console.log('Remark walking tree for <br> parsing');
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const walk = (node: any) => {
-                    if (node.type === 'html' && /<br\s*\/?>/i.test(node.value || '')) {
-                        // console.log('Found <br> HTML node, converting to break');
-                        node.type = 'break';
-                        delete node.value;
-                    }
-                    if (node.children) {
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        node.children.forEach(walk);
-                    }
-                };
-                walk(tree);
-            };
+  lastSavedContent = content || '';
+
+  try {
+    // Create Milkdown Crepe instance
+    crepeInstance = new Crepe({
+      root: editorEl,
+      defaultValue: content || '',
+      features: {
+        [CrepeFeature.Latex]: false, // Disable LaTeX for simplicity
+      },
+    });
+
+    // Define a simple remark plugin to parse <br> tags back into break nodes
+    // This ensures round-trip persistence across mode switches
+    const remarkParseBreak = () => {
+      return (tree: any) => {
+        // console.log('Remark walking tree for <br> parsing');
+
+        const walk = (node: any) => {
+          if (node.type === 'html' && /<br\s*\/?>/i.test(node.value || '')) {
+            // console.log('Found <br> HTML node, converting to break');
+            node.type = 'break';
+            delete node.value;
+          }
+          if (node.children) {
+            node.children.forEach(walk);
+          }
+        };
+        walk(tree);
+      };
+    };
+
+    // Configure editor
+    crepeInstance.editor
+      .config((ctx) => {
+        // Register the <br> parser plugin
+        ctx.update(remarkPluginsCtx, (prev: any) => [...(prev as any[]), remarkParseBreak]);
+
+        (ctx.get(listenerCtx) as any).keydown = (ctx: any, event: any) => {
+          const { key, shiftKey } = event;
+
+          if (key !== 'Enter') return false;
+
+          if (shiftKey) {
+            // Shift+Enter: Insert hard break
+            // Using direct insertion as it's more reliable than the command in some contexts (like tables)
+            if (editorView) {
+              const { state, dispatch } = editorView;
+              const { schema, tr } = state;
+              // The node name is 'hardbreak' in the schema
+              const hardBreak = schema.nodes.hardbreak || schema.nodes.hard_break;
+              if (hardBreak) {
+                dispatch(tr.replaceSelectionWith(hardBreak.create()).scrollIntoView());
+                return true;
+              }
+            }
+            // Fallback to command if view is not ready
+            ctx.get(callCommand)(insertHardbreakCommand);
+            return true;
+          }
+
+          // Normal Enter
+          if (editorView) {
+            const { state } = editorView;
+            const { selection } = state;
+            const { $from } = selection;
+
+            // Check ancestors for list_item
+            for (let i = $from.depth; i > 0; i--) {
+              const node = $from.node(i);
+              if (node.type.name === 'list_item') {
+                // Explicitly call splitListItem
+                const { schema } = state;
+                const command = splitListItem(schema.nodes.list_item);
+                if (command(state, editorView.dispatch)) {
+                  return true;
+                }
+                return false;
+              }
+            }
+          }
+
+          // For normal Enter outside lists, let the default behavior handle it
+          return false;
         };
 
-        // Configure editor
-        crepeInstance.editor
-            .config((ctx) => {
-                // Register the <br> parser plugin
-                ctx.update(remarkPluginsCtx, (prev: any) => [...(prev as any[]), remarkParseBreak]);
+        // Override hard_break serialization to use <br> instead of backslash or spaces
+        // This enables visual line breaks in tables while keeping standard behavior elsewhere
+        ctx.update(remarkStringifyOptionsCtx, (prev) => ({
+          ...prev,
+          handlers: {
+            ...(prev.handlers || {}),
+            break: () => '<br>',
+          },
+        }));
+      })
+      .use(listener);
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-                (ctx.get(listenerCtx) as any).keydown = (ctx: any, event: any) => {
-                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-                    const { key, shiftKey } = event;
+    // Create the editor
+    await crepeInstance.create();
 
-                    if (key !== 'Enter') return false;
-
-                    if (shiftKey) {
-                        // Shift+Enter: Insert hard break
-                        // Using direct insertion as it's more reliable than the command in some contexts (like tables)
-                        if (editorView) {
-                            const { state, dispatch } = editorView;
-                            const { schema, tr } = state;
-                            // The node name is 'hardbreak' in the schema
-                            const hardBreak = schema.nodes.hardbreak || schema.nodes.hard_break;
-                            if (hardBreak) {
-                                dispatch(tr.replaceSelectionWith(hardBreak.create()).scrollIntoView());
-                                return true;
-                            }
-                        }
-                        // Fallback to command if view is not ready
-                        ctx.get(callCommand)(insertHardbreakCommand);
-                        return true;
-                    }
-
-                    // Normal Enter
-                    if (editorView) {
-                        const { state } = editorView;
-                        const { selection } = state;
-                        const { $from } = selection;
-
-                        // Check ancestors for list_item
-                        for (let i = $from.depth; i > 0; i--) {
-                            const node = $from.node(i);
-                            if (node.type.name === 'list_item') {
-                                // Explicitly call splitListItem
-                                const { schema } = state;
-                                const command = splitListItem(schema.nodes.list_item);
-                                if (command(state, editorView.dispatch)) {
-                                    return true;
-                                }
-                                return false;
-                            }
-                        }
-                    }
-
-                    // For normal Enter outside lists, let the default behavior handle it
-                    return false;
-                };
-
-                // Override hard_break serialization to use <br> instead of backslash or spaces
-                // This enables visual line breaks in tables while keeping standard behavior elsewhere
-                ctx.update(remarkStringifyOptionsCtx, (prev) => ({
-                    ...prev,
-                    handlers: {
-                        ...(prev.handlers || {}),
-                        break: () => '<br>',
-                    },
-                }));
-            })
-            .use(listener);
-
-        // Create the editor
-        await crepeInstance.create();
-
-        // Get editor view after creation using editor.action
-        try {
-            crepeInstance.editor.action((ctx) => {
-                editorView = ctx.get(editorViewCtx);
-                // console.log('Got editor view via action:', editorView);
-            });
-        } catch (e) {
-            console.error('Failed to get editor view:', e);
-        }
-
-        // Listen for changes using editor's update listener
-        crepeInstance.on((api) => {
-            api.updated(() => {
-                scheduleAutoSave();
-            });
-        });
-
-        // Setup table autocomplete feature
-        setupTableAutoComplete(
-            editorEl,
-            () => editorView,
-            () => crepeInstance,
-            async (newContent) => {
-                if (crepeInstance) {
-                    await crepeInstance.destroy();
-                    crepeInstance = null;
-                }
-                await initEditor(newContent);
-            }
-        );
-
-        // console.log('Milkdown Crepe editor initialized');
-    } catch (error) {
-        console.error('Failed to initialize Milkdown Crepe:', error);
-        // Fallback to simple contentEditable
-        const fallbackEl = document.createElement('div');
-        fallbackEl.className = 'ProseMirror';
-        fallbackEl.contentEditable = 'true';
-        fallbackEl.style.cssText = 'outline: none; min-height: 100%; white-space: pre-wrap;';
-        fallbackEl.textContent = content || '';
-        editorEl.appendChild(fallbackEl);
-
-        fallbackEl.addEventListener('input', () => {
-            scheduleAutoSave();
-        });
+    // Get editor view after creation using editor.action
+    try {
+      crepeInstance.editor.action((ctx) => {
+        editorView = ctx.get(editorViewCtx);
+        // console.log('Got editor view via action:', editorView);
+      });
+    } catch (e) {
+      console.error('Failed to get editor view:', e);
     }
+
+    // Listen for changes using editor's update listener
+    crepeInstance.on((api) => {
+      api.updated(() => {
+        scheduleAutoSave();
+      });
+    });
+
+    // Setup table autocomplete feature
+    setupTableAutoComplete(
+      editorEl,
+      () => editorView,
+      () => crepeInstance,
+      async (newContent) => {
+        if (crepeInstance) {
+          await crepeInstance.destroy();
+          crepeInstance = null;
+        }
+        await initEditor(newContent);
+      }
+    );
+
+    // console.log('Milkdown Crepe editor initialized');
+  } catch (error) {
+    console.error('Failed to initialize Milkdown Crepe:', error);
+    // Fallback to simple contentEditable
+    const fallbackEl = document.createElement('div');
+    fallbackEl.className = 'ProseMirror';
+    fallbackEl.contentEditable = 'true';
+    fallbackEl.style.cssText = 'outline: none; min-height: 100%; white-space: pre-wrap;';
+    fallbackEl.textContent = content || '';
+    editorEl.appendChild(fallbackEl);
+
+    fallbackEl.addEventListener('input', () => {
+      scheduleAutoSave();
+    });
+  }
 }
 
 // Get content from editor
 function getEditorContent(): string {
-    if (crepeInstance) {
-        try {
-            let markdown = crepeInstance.getMarkdown();
-            return removeExtraListBlankLines(markdown);
-        } catch (e) {
-            console.warn('Failed to get markdown from Crepe:', e);
-        }
+  if (crepeInstance) {
+    try {
+      const markdown = crepeInstance.getMarkdown();
+      return removeExtraListBlankLines(markdown);
+    } catch (e) {
+      console.warn('Failed to get markdown from Crepe:', e);
     }
+  }
 
-    // Fallback for simple editor
-    const proseMirror = document.querySelector('#editor .ProseMirror');
-    if (proseMirror && proseMirror.textContent !== null) {
-        return proseMirror.textContent;
-    }
-    return lastSavedContent;
+  // Fallback for simple editor
+  const proseMirror = document.querySelector('#editor .ProseMirror');
+  if (proseMirror && proseMirror.textContent !== null) {
+    return proseMirror.textContent;
+  }
+  return lastSavedContent;
 }
 
 // Set content to editor
 async function setEditorContent(content: string) {
-    if (crepeInstance) {
-        try {
-            // Destroy and recreate with new content
-            await crepeInstance.destroy();
-            crepeInstance = null;
-            await initEditor(content);
-            return;
-        } catch (e) {
-            console.warn('Failed to set content via Crepe:', e);
-        }
+  if (crepeInstance) {
+    try {
+      // Destroy and recreate with new content
+      await crepeInstance.destroy();
+      crepeInstance = null;
+      await initEditor(content);
+      return;
+    } catch (e) {
+      console.warn('Failed to set content via Crepe:', e);
     }
+  }
 
-    // Fallback
-    const proseMirror = document.querySelector('#editor .ProseMirror');
-    if (proseMirror) {
-        proseMirror.textContent = content;
-    }
+  // Fallback
+  const proseMirror = document.querySelector('#editor .ProseMirror');
+  if (proseMirror) {
+    proseMirror.textContent = content;
+  }
 }
 
 // Schedule auto-save with debounce
 function scheduleAutoSave() {
-    const saveStatus = document.getElementById('save-status');
-    if (saveStatus) saveStatus.textContent = '変更あり...';
+  const saveStatus = document.getElementById('save-status');
+  if (saveStatus) saveStatus.textContent = '変更あり...';
 
-    if (saveTimeout) {
-        clearTimeout(saveTimeout);
-    }
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
 
-    saveTimeout = setTimeout(() => {
-        saveNote().catch(console.error);
-    }, AUTO_SAVE_DELAY_MS);
+  saveTimeout = setTimeout(() => {
+    saveNote().catch(console.error);
+  }, AUTO_SAVE_DELAY_MS);
 }
 
 // Save note to backend
 async function saveNote() {
-    if (!noteId || !noteData) return;
-    if (!adapter) adapter = await getAdapter();
+  if (!noteId || !noteData) return;
+  if (!adapter) adapter = await getAdapter();
 
-    const sourceEditor = document.getElementById('source-editor') as HTMLTextAreaElement;
-    const content = isEditorMode && sourceEditor
-        ? sourceEditor.value
-        : getEditorContent();
+  const sourceEditor = document.getElementById('source-editor') as HTMLTextAreaElement;
+  const content = isEditorMode && sourceEditor ? sourceEditor.value : getEditorContent();
 
-    // Extract title from first line
-    const title = extractTitle(content);
+  // Extract title from first line
+  const title = extractTitle(content);
 
-    noteData.content = content;
-    noteData.title = title;
-    noteData.updated_at = new Date().toISOString();
+  noteData.content = content;
+  noteData.title = title;
+  noteData.updated_at = new Date().toISOString();
 
-    try {
-        await adapter.saveNote(noteData);
-        lastSavedContent = content;
+  try {
+    await adapter.saveNote(noteData);
+    lastSavedContent = content;
 
-        const saveStatus = document.getElementById('save-status');
-        if (saveStatus) saveStatus.textContent = '保存済み';
+    const saveStatus = document.getElementById('save-status');
+    if (saveStatus) saveStatus.textContent = '保存済み';
 
-        const noteTitle = document.getElementById('note-title');
-        if (noteTitle) noteTitle.textContent = title;
+    const noteTitle = document.getElementById('note-title');
+    if (noteTitle) noteTitle.textContent = title;
 
-        // Update window title
-        await adapter.setWindowTitle(title);
-    } catch (error) {
-        console.error('Failed to save note:', error);
-        const saveStatus = document.getElementById('save-status');
-        if (saveStatus) saveStatus.textContent = '保存エラー';
-    }
+    // Update window title
+    await adapter.setWindowTitle(title);
+  } catch (error) {
+    console.error('Failed to save note:', error);
+    const saveStatus = document.getElementById('save-status');
+    if (saveStatus) saveStatus.textContent = '保存エラー';
+  }
 }
 
 // Toggle editor mode
 async function toggleEditorMode() {
-    isEditorMode = !isEditorMode;
+  isEditorMode = !isEditorMode;
 
-    const editorContainer = document.getElementById('editor-container');
-    const sourceContainer = document.getElementById('source-container');
-    const sourceEditor = document.getElementById('source-editor') as HTMLTextAreaElement;
-    const modeIndicator = document.getElementById('mode-indicator');
-    const toggleBtn = document.getElementById('btn-toggle');
+  const editorContainer = document.getElementById('editor-container');
+  const sourceContainer = document.getElementById('source-container');
+  const sourceEditor = document.getElementById('source-editor') as HTMLTextAreaElement;
+  const modeIndicator = document.getElementById('mode-indicator');
+  const toggleBtn = document.getElementById('btn-toggle');
 
-    if (!editorContainer || !sourceContainer || !sourceEditor || !modeIndicator || !toggleBtn) return;
+  if (!editorContainer || !sourceContainer || !sourceEditor || !modeIndicator || !toggleBtn) return;
 
-    if (isEditorMode) {
-        // Switch to source editor
-        const content = getEditorContent();
-        sourceEditor.value = content;
+  if (isEditorMode) {
+    // Switch to source editor
+    const content = getEditorContent();
+    sourceEditor.value = content;
 
-        editorContainer.classList.add('hidden');
-        sourceContainer.classList.add('active');
-        modeIndicator.textContent = 'Source';
-        modeIndicator.classList.add('editor-mode');
-        toggleBtn.textContent = '👁️';
+    editorContainer.classList.add('hidden');
+    sourceContainer.classList.add('active');
+    modeIndicator.textContent = 'Source';
+    modeIndicator.classList.add('editor-mode');
+    toggleBtn.textContent = '👁️';
 
-        sourceEditor.focus();
-    } else {
-        // Switch to WYSIWYG
-        const content = sourceEditor.value;
-        lastSavedContent = content;
+    sourceEditor.focus();
+  } else {
+    // Switch to WYSIWYG
+    const content = sourceEditor.value;
+    lastSavedContent = content;
 
-        editorContainer.classList.remove('hidden');
-        sourceContainer.classList.remove('active');
-        modeIndicator.textContent = 'WYSIWYG';
-        modeIndicator.classList.remove('editor-mode');
-        toggleBtn.textContent = '📝';
+    editorContainer.classList.remove('hidden');
+    sourceContainer.classList.remove('active');
+    modeIndicator.textContent = 'WYSIWYG';
+    modeIndicator.classList.remove('editor-mode');
+    toggleBtn.textContent = '📝';
 
-        await setEditorContent(content);
-    }
+    await setEditorContent(content);
+  }
 }
 
 // Delete note
 async function deleteNote() {
-    if (!noteId) return;
-    if (!adapter) adapter = await getAdapter();
+  if (!noteId) return;
+  if (!adapter) adapter = await getAdapter();
 
-    const confirmed = await adapter.confirm('このノートを削除しますか？', {
-        title: '削除の確認',
-        kind: 'warning',
-        okLabel: '削除',
-        cancelLabel: 'キャンセル'
-    });
-    if (confirmed) {
-        try {
-            await adapter.deleteNote(noteId);
-            // Close window after deletion
-            await adapter.closeWindow();
-        } catch (error) {
-            console.error('Failed to delete note:', error);
-        }
+  const confirmed = await adapter.confirm('このノートを削除しますか？', {
+    title: '削除の確認',
+    kind: 'warning',
+    okLabel: '削除',
+    cancelLabel: 'キャンセル',
+  });
+  if (confirmed) {
+    try {
+      await adapter.deleteNote(noteId);
+      // Close window after deletion
+      await adapter.closeWindow();
+    } catch (error) {
+      console.error('Failed to delete note:', error);
     }
+  }
 }
 
 // Export as markdown file
 function exportAsMarkdown() {
-    const sourceEditor = document.getElementById('source-editor') as HTMLTextAreaElement;
-    const content = isEditorMode && sourceEditor
-        ? sourceEditor.value
-        : getEditorContent();
+  const sourceEditor = document.getElementById('source-editor') as HTMLTextAreaElement;
+  const content = isEditorMode && sourceEditor ? sourceEditor.value : getEditorContent();
 
-    const title = extractTitle(content);
-    const blob = new Blob([content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
+  const title = extractTitle(content);
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${title}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${title}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 // Update note color
 async function updateNoteColor(color: string) {
-    if (!noteId || !noteData) return;
+  if (!noteId || !noteData) return;
 
-    noteData.color = color;
-    document.documentElement.style.setProperty('--note-color', color);
+  noteData.color = color;
+  document.documentElement.style.setProperty('--note-color', color);
 
-    // Update active state in UI
-    document.querySelectorAll('.color-option').forEach(opt => {
-        const option = opt as HTMLElement;
-        option.classList.toggle('active', option.dataset.color === color);
-    });
+  // Update active state in UI
+  document.querySelectorAll('.color-option').forEach((opt) => {
+    const option = opt as HTMLElement;
+    option.classList.toggle('active', option.dataset.color === color);
+  });
 
-    await saveNote();
+  await saveNote();
 }
 
 // Save window position/size
 async function saveWindowState() {
-    if (!noteId || !noteData) return;
-    if (!adapter) adapter = await getAdapter();
+  if (!noteId || !noteData) return;
+  if (!adapter) adapter = await getAdapter();
 
-    try {
-        const position = await adapter.getWindowPosition();
-        const size = await adapter.getWindowSize();
+  try {
+    const position = await adapter.getWindowPosition();
+    const size = await adapter.getWindowSize();
 
-        await adapter.updateWindowState(
-            noteId,
-            position.x,
-            position.y,
-            size.width,
-            size.height
-        );
-    } catch (error) {
-        console.error('Failed to save window state:', error);
-    }
+    await adapter.updateWindowState(noteId, position.x, position.y, size.width, size.height);
+  } catch (error) {
+    console.error('Failed to save window state:', error);
+  }
 }
 
 // Setup settings
 function setupSettings() {
-    const settingsBtn = document.getElementById('btn-settings');
-    const settingsPanel = document.getElementById('settings-panel');
-    const lineHeightRange = document.getElementById('line-height-range') as HTMLInputElement;
-    const lineHeightValue = document.getElementById('line-height-value');
+  const settingsBtn = document.getElementById('btn-settings');
+  const settingsPanel = document.getElementById('settings-panel');
+  const lineHeightRange = document.getElementById('line-height-range') as HTMLInputElement;
+  const lineHeightValue = document.getElementById('line-height-value');
 
-    if (!settingsBtn || !settingsPanel || !lineHeightRange || !lineHeightValue) return;
+  if (!settingsBtn || !settingsPanel || !lineHeightRange || !lineHeightValue) return;
 
-    // Load saved setting
-    const savedLineHeight = localStorage.getItem(STORAGE_KEY_LINE_HEIGHT) || DEFAULT_LINE_HEIGHT;
-    document.documentElement.style.setProperty('--line-height', savedLineHeight);
-    lineHeightRange.value = savedLineHeight;
-    lineHeightValue.textContent = savedLineHeight;
+  // Load saved setting
+  const savedLineHeight = localStorage.getItem(STORAGE_KEY_LINE_HEIGHT) || DEFAULT_LINE_HEIGHT;
+  document.documentElement.style.setProperty('--line-height', savedLineHeight);
+  lineHeightRange.value = savedLineHeight;
+  lineHeightValue.textContent = savedLineHeight;
 
-    // Toggle panel
-    settingsBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        settingsPanel.classList.toggle('hidden');
+  // Toggle panel
+  settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    settingsPanel.classList.toggle('hidden');
+  });
+
+  // Close panel when clicking outside
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (
+      !settingsPanel.classList.contains('hidden') &&
+      !settingsPanel.contains(target) &&
+      target !== settingsBtn
+    ) {
+      settingsPanel.classList.add('hidden');
+    }
+  });
+
+  // Handle range change
+  lineHeightRange.addEventListener('input', (e) => {
+    const target = e.target as HTMLInputElement;
+    const value = target.value;
+    if (lineHeightValue) lineHeightValue.textContent = value;
+    document.documentElement.style.setProperty('--line-height', value);
+    localStorage.setItem(STORAGE_KEY_LINE_HEIGHT, value);
+  });
+
+  // Handle color selection
+  document.querySelectorAll('.color-option').forEach((opt) => {
+    const option = opt as HTMLElement;
+    option.addEventListener('click', () => {
+      const color = option.dataset.color;
+      if (color) {
+        updateNoteColor(color).catch(console.error);
+      }
     });
-
-    // Close panel when clicking outside
-    document.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
-        if (!settingsPanel.classList.contains('hidden') &&
-            !settingsPanel.contains(target) &&
-            target !== settingsBtn) {
-            settingsPanel.classList.add('hidden');
-        }
-    });
-
-    // Handle range change
-    lineHeightRange.addEventListener('input', (e) => {
-        const target = e.target as HTMLInputElement;
-        const value = target.value;
-        if (lineHeightValue) lineHeightValue.textContent = value;
-        document.documentElement.style.setProperty('--line-height', value);
-        localStorage.setItem(STORAGE_KEY_LINE_HEIGHT, value);
-    });
-
-    // Handle color selection
-    document.querySelectorAll('.color-option').forEach(opt => {
-        const option = opt as HTMLElement;
-        option.addEventListener('click', () => {
-            const color = option.dataset.color;
-            if (color) {
-                updateNoteColor(color).catch(console.error);
-            }
-        });
-    });
+  });
 }
 
 // Setup event listeners
 function setupEventListeners() {
-    setupSettings();
-    const btnToggle = document.getElementById('btn-toggle');
-    if (btnToggle) {
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        btnToggle.addEventListener('click', toggleEditorMode);
-    }
+  setupSettings();
+  const btnToggle = document.getElementById('btn-toggle');
+  if (btnToggle) {
+    btnToggle.addEventListener('click', toggleEditorMode);
+  }
 
-    const btnDelete = document.getElementById('btn-delete');
-    if (btnDelete) {
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        btnDelete.addEventListener('click', deleteNote);
-    }
+  const btnDelete = document.getElementById('btn-delete');
+  if (btnDelete) {
+    btnDelete.addEventListener('click', deleteNote);
+  }
 
-    const btnExport = document.getElementById('btn-export');
-    if (btnExport) {
-        btnExport.addEventListener('click', exportAsMarkdown);
-    }
+  const btnExport = document.getElementById('btn-export');
+  if (btnExport) {
+    btnExport.addEventListener('click', exportAsMarkdown);
+  }
 
-    // Source editor input
-    const sourceEditor = document.getElementById('source-editor');
-    if (sourceEditor) {
-        sourceEditor.addEventListener('input', () => {
-            scheduleAutoSave();
-        });
-    }
-
-    // Back button (browser mobile only)
-    const btnBack = document.getElementById('btn-back');
-    if (btnBack) {
-        // eslint-disable-next-line @typescript-eslint/no-misused-promises
-        btnBack.addEventListener('click', async () => {
-            if (adapter) await adapter.closeWindow();
-        });
-    }
-
-    // Context detection for CSS
-    const params = new URLSearchParams(window.location.search);
-    const isSidebar = params.get('sidebar') === 'true';
-    const isTauri = !!((window as any).__TAURI__ || (window as any).__TAURI_INTERNALS__);
-
-    if (!isTauri) {
-        document.body.classList.add('is-browser');
-        if (isSidebar) {
-            document.body.classList.add('is-sidebar');
-        }
-    }
-
-    // Keyboard shortcuts
-    document.addEventListener('keydown', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-            const key = e.key.toLowerCase();
-            if (key === '/' || e.code === 'Slash' || e.keyCode === 191) {
-                e.preventDefault();
-                toggleEditorMode().catch(console.error);
-                return;
-            }
-            if (key === 's') {
-                e.preventDefault();
-                saveNote().catch(console.error);
-            }
-        }
+  // Source editor input
+  const sourceEditor = document.getElementById('source-editor');
+  if (sourceEditor) {
+    sourceEditor.addEventListener('input', () => {
+      scheduleAutoSave();
     });
+  }
 
-    // Save window state on move/resize
-    if (adapter) {
-        let moveTimeout: ReturnType<typeof setTimeout> | null = null;
+  // Back button (browser mobile only)
+  const btnBack = document.getElementById('btn-back');
+  if (btnBack) {
+    btnBack.addEventListener('click', async () => {
+      if (adapter) await adapter.closeWindow();
+    });
+  }
 
-        if (adapter.onWindowMoved) {
-            adapter.onWindowMoved(() => {
-                if (moveTimeout) clearTimeout(moveTimeout);
-                moveTimeout = setTimeout(() => {
-                    saveWindowState().catch(console.error);
-                }, MOVE_DEBOUNCE_MS);
-            });
-        }
+  // Context detection for CSS
+  const params = new URLSearchParams(window.location.search);
+  const isSidebar = params.get('sidebar') === 'true';
+  const isTauri = !!((window as any).__TAURI__ || (window as any).__TAURI_INTERNALS__);
 
-        if (adapter.onWindowResized) {
-            adapter.onWindowResized(() => {
-                if (moveTimeout) clearTimeout(moveTimeout);
-                moveTimeout = setTimeout(() => {
-                    saveWindowState().catch(console.error);
-                }, RESIZE_DEBOUNCE_MS);
-            });
-        }
+  if (!isTauri) {
+    document.body.classList.add('is-browser');
+    if (isSidebar) {
+      document.body.classList.add('is-sidebar');
     }
+  }
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      const key = e.key.toLowerCase();
+      if (key === '/' || e.code === 'Slash' || e.keyCode === 191) {
+        e.preventDefault();
+        toggleEditorMode().catch(console.error);
+        return;
+      }
+      if (key === 's') {
+        e.preventDefault();
+        saveNote().catch(console.error);
+      }
+    }
+  });
+
+  // Save window state on move/resize
+  if (adapter) {
+    let moveTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    if (adapter.onWindowMoved) {
+      adapter.onWindowMoved(() => {
+        if (moveTimeout) clearTimeout(moveTimeout);
+        moveTimeout = setTimeout(() => {
+          saveWindowState().catch(console.error);
+        }, MOVE_DEBOUNCE_MS);
+      });
+    }
+
+    if (adapter.onWindowResized) {
+      adapter.onWindowResized(() => {
+        if (moveTimeout) clearTimeout(moveTimeout);
+        moveTimeout = setTimeout(() => {
+          saveWindowState().catch(console.error);
+        }, RESIZE_DEBOUNCE_MS);
+      });
+    }
+  }
 }
 
 // Initialize
-// eslint-disable-next-line @typescript-eslint/no-misused-promises
+
 document.addEventListener('DOMContentLoaded', async () => {
-    // Attach console log to Tauri terminal (Tauri only)
-    if ((window as any).__TAURI__) {
-        try {
-            const { attachConsole } = await import('@tauri-apps/plugin-log');
-            await attachConsole();
-        } catch (e) {
-            console.error('Failed to attach console:', e);
-        }
-    }
-    // console.log('DOMContentLoaded fired');
-    adapter = await getAdapter();
-
-    noteId = getNoteIdFromUrl();
-    // console.log('Note ID:', noteId);
-
-    if (!noteId) {
-        console.error('No note ID provided');
-        const editor = document.getElementById('editor');
-        if (editor) {
-            editor.innerHTML = '<div style="padding: 20px; color: red;">エラー: ノートIDが指定されていません</div>';
-        }
-        return;
-    }
-
+  // Attach console log to Tauri terminal (Tauri only)
+  if ((window as any).__TAURI__) {
     try {
-        // Retry logic for newly created notes
-        let retries = 10;
-        while (retries > 0) {
-            // console.log('Attempting to load note, retries left:', retries);
-            noteData = await adapter.getNote(noteId);
-            if (noteData) break;
-            retries--;
-            await new Promise(resolve => setTimeout(resolve, 200));
-        }
+      const { attachConsole } = await import('@tauri-apps/plugin-log');
+      await attachConsole();
+    } catch (e) {
+      console.error('Failed to attach console:', e);
+    }
+  }
+  // console.log('DOMContentLoaded fired');
+  adapter = await getAdapter();
 
-        // console.log('Note data:', noteData);
+  noteId = getNoteIdFromUrl();
+  // console.log('Note ID:', noteId);
 
-        if (noteData) {
-            const noteTitle = document.getElementById('note-title');
-            if (noteTitle) noteTitle.textContent = noteData.title;
+  if (!noteId) {
+    console.error('No note ID provided');
+    const editor = document.getElementById('editor');
+    if (editor) {
+      editor.innerHTML =
+        '<div style="padding: 20px; color: red;">エラー: ノートIDが指定されていません</div>';
+    }
+    return;
+  }
 
-            if (noteData.color) {
-                document.documentElement.style.setProperty('--note-color', noteData.color);
-                const activeOpt = document.querySelector(`.color-option[data-color="${noteData.color}"]`);
-                if (activeOpt) activeOpt.classList.add('active');
-            }
-
-            await initEditor(noteData.content);
-
-            await adapter.setWindowTitle(noteData.title);
-        } else {
-            console.error('Note not found:', noteId);
-            // Create minimal noteData for saving
-            noteData = {
-                id: noteId,
-                title: '新しいノート',
-                content: '',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                window_state: {
-                    x: DEFAULT_WINDOW_X,
-                    y: DEFAULT_WINDOW_Y,
-                    width: DEFAULT_WINDOW_WIDTH,
-                    height: DEFAULT_WINDOW_HEIGHT
-                },
-                color: NOTE_COLOR_DEFAULT,
-                deleted: false
-            };
-            await initEditor('');
-        }
-    } catch (error) {
-        console.error('Failed to load note:', error);
-        const editor = document.getElementById('editor');
-        if (editor) {
-            editor.innerHTML = `<div style="padding: 20px; color: red;">エラー: ${error}</div>`;
-        }
+  try {
+    // Retry logic for newly created notes
+    let retries = 10;
+    while (retries > 0) {
+      // console.log('Attempting to load note, retries left:', retries);
+      noteData = await adapter.getNote(noteId);
+      if (noteData) break;
+      retries--;
+      await new Promise((resolve) => setTimeout(resolve, 200));
     }
 
-    setupEventListeners();
+    // console.log('Note data:', noteData);
+
+    if (noteData) {
+      const noteTitle = document.getElementById('note-title');
+      if (noteTitle) noteTitle.textContent = noteData.title;
+
+      if (noteData.color) {
+        document.documentElement.style.setProperty('--note-color', noteData.color);
+        const activeOpt = document.querySelector(`.color-option[data-color="${noteData.color}"]`);
+        if (activeOpt) activeOpt.classList.add('active');
+      }
+
+      await initEditor(noteData.content);
+
+      await adapter.setWindowTitle(noteData.title);
+    } else {
+      console.error('Note not found:', noteId);
+      // Create minimal noteData for saving
+      noteData = {
+        id: noteId,
+        title: '新しいノート',
+        content: '',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        window_state: {
+          x: DEFAULT_WINDOW_X,
+          y: DEFAULT_WINDOW_Y,
+          width: DEFAULT_WINDOW_WIDTH,
+          height: DEFAULT_WINDOW_HEIGHT,
+        },
+        color: NOTE_COLOR_DEFAULT,
+        deleted: false,
+      };
+      await initEditor('');
+    }
+  } catch (error) {
+    console.error('Failed to load note:', error);
+    const editor = document.getElementById('editor');
+    if (editor) {
+      editor.innerHTML = `<div style="padding: 20px; color: red;">エラー: ${error}</div>`;
+    }
+  }
+
+  setupEventListeners();
 });

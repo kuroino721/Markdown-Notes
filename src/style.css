@@ -13,9 +13,8 @@
   --error: #f38ba8;
   --rosewater: #f5e0dc;
   --flamingo: #f2cdcd;
-  --editor-font:
-    "Inter", "Noto Sans JP", -apple-system, BlinkMacSystemFont, sans-serif;
-  --mono-font: "JetBrains Mono", "Fira Code", monospace;
+  --editor-font: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono-font: 'JetBrains Mono', 'Fira Code', monospace;
 
   /* Crepe / CodeMirror code-block variables */
   --crepe-color-surface: #11111b;
@@ -352,7 +351,7 @@ body {
 
 #editor li::marker {
   display: none !important;
-  content: "" !important;
+  content: '' !important;
 }
 
 #editor li {
@@ -369,7 +368,7 @@ body {
 
 /* Custom Bullet - Apply only to standard ul items */
 #editor ul li:not([data-checked])::before {
-  content: "\2022";
+  content: '\2022';
   margin-right: 0.5em;
   font-weight: bold;
   color: var(--text-secondary);
@@ -418,20 +417,20 @@ body {
 }
 
 /* Task list */
-.milkdown li[data-checked="true"],
-.milkdown li[data-checked="false"] {
+.milkdown li[data-checked='true'],
+.milkdown li[data-checked='false'] {
   list-style: none;
   position: relative;
 }
 
-.milkdown li[data-checked="true"]::before {
-  content: "✅";
+.milkdown li[data-checked='true']::before {
+  content: '✅';
   position: absolute;
   left: -24px;
 }
 
-.milkdown li[data-checked="false"]::before {
-  content: "⬜";
+.milkdown li[data-checked='false']::before {
+  content: '⬜';
   position: absolute;
   left: -24px;
 }
@@ -611,7 +610,7 @@ body {
   color: #c7254e;
   padding: 2px 4px;
   border-radius: 3px;
-  font-family: "Consolas", "Monaco", monospace;
+  font-family: 'Consolas', 'Monaco', monospace;
   font-size: 0.9em;
 }
 
@@ -690,11 +689,11 @@ body {
 }
 
 .note-editor li[data-checked]::before {
-  content: "☐ ";
+  content: '☐ ';
 }
 
-.note-editor li[data-checked="true"]::before {
-  content: "☑ ";
+.note-editor li[data-checked='true']::before {
+  content: '☑ ';
 }
 
 /* Mobile Optimizations */

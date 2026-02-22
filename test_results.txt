@@ -1,0 +1,14 @@
+
+> markdown_notes@1.0.0 test D:\dev\Markdown-Notes
+> vitest run -c vite.config.ts "run"
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mD:/dev/Markdown-Notes/src[39m
+
+No test files found, exiting with code 1
+
+filter: run
+include: **/*.test.ts, **/*.spec.ts
+exclude:  **/node_modules/**, **/.git/**
+
+窶右LIFECYCLE窶・Test failed. See above for more details.

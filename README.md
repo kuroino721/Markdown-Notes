@@ -44,7 +44,25 @@ src/
 2. **Rust ツールチェーン** (Windows用 `rustup-init.exe` からインストール)
 3. **Microsoft Visual Studio C++ Build Tools** (C++によるデスクトップ開発 + Windows 10/11 SDK付き)
 
-### インストールと起動
+### 開発者向け (Lint/Format)
+
+コードの品質を維持するため、ESLint, Prettier, Clippy, Rustfmt を導入しています。
+
+#### フロントエンド (TypeScript)
+- `pnpm lint`: ESLint による静的解析を実行
+- `pnpm lint:fix`: ESLint による自動修正を実行
+- `pnpm format`: Prettier による自動フォーマットを実行
+- `pnpm format:check`: フォーマットが正しいか確認
+
+#### バックエンド (Rust)
+- `cd src-tauri && cargo clippy -- -D warnings`: Clippy による静的解析を実行
+- `cd src-tauri && cargo fmt --check`: フォーマットが正しいか確認
+
+これらのチェックは CI でも自動的に実行されます。修正を行う際は、コミット前にこれらのコマンドを実行して確認することを推奨します。
+
+---
+
+## インストールと起動
 
 ```powershell
 # リポジトリのクローン後、依存関係のインストール

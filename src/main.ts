@@ -156,6 +156,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const { attachConsole } = await import('@tauri-apps/plugin-log');
             await attachConsole();
+
+            // EMERGENCY DEBUG: Write any unhandled errors straight to disk
+            const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+            window.onerror = function (message, source, lineno, colno, error) {
+                writeTextFile('JS_CRASH_LOG.txt', `UI Crash: ${message} at ${source}:${lineno}:${colno}\n${error?.stack}`).catch(console.error);
+                return false;
+            };
+            window.addEventListener('unhandledrejection', function (event) {
+                writeTextFile('JS_PROMISE_CRASH.txt', `Promise crash: ${event.reason}`).catch(console.error);
+            });
         } catch (e) {
             console.error('Failed to attach console:', e);
         }
@@ -301,15 +311,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnSync && adapter) {
         // eslint-disable-next-line @typescript-eslint/no-misused-promises
         btnSync.addEventListener('click', async (e) => {
+            // Write to disk
+            if ((window as any).__TAURI__) {
+                const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+                await writeTextFile('JS_TRACE_SYNC_CLICK.txt', 'Sync button clicked!').catch(console.error);
+            }
             // If logout button was clicked, don't trigger sync
             const target = e.target as HTMLElement;
             if (target.closest('#btn-logout-gdrive')) return;
             if (!adapter) return;
 
+            // Prevent double-clicking
+            if (btnSync.classList.contains('syncing')) return;
+
             const statusLabel = document.getElementById('sync-status');
             if (!statusLabel) return;
 
             try {
+                if ((window as any).__TAURI__) {
+                    const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+                    await writeTextFile('JS_TRACE_SYNC_START.txt', 'Starting sync flow').catch(console.error);
+                }
                 btnSync.classList.add('syncing');
                 btnSync.classList.remove('synced', 'error');
                 statusLabel.textContent = '同期中...';
@@ -322,11 +344,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 await renderNotes();
                 await updateSyncStatus(); // Added await
-            } catch (error) {
+            } catch (error: any) {
+                if ((window as any).__TAURI__) {
+                    const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+                    await writeTextFile('JS_TRACE_SYNC_ERROR.txt', `Caught sync error: ${error.message || error}`).catch(console.error);
+                }
                 console.error('Sync failed:', error);
                 btnSync.classList.remove('syncing');
                 btnSync.classList.add('error');
+
+                const errorText = error.message || String(error);
                 statusLabel.textContent = 'エラー';
+                statusLabel.title = errorText; // Set title so user can hover to see details natively
+
+                const errorMessage = `Google Drive 同期エラー:\n${errorText}`;
+
+                if ((window as any).isTauri) {
+                    try {
+                        const { message } = await import('@tauri-apps/plugin-dialog');
+                        await message(errorMessage, { title: 'エラー', kind: 'error' });
+                    } catch (e) {
+                        console.error('Failed to show native dialog:', e);
+                        // Fallback to DOM injection if both native dialog and alert fail
+                        alert(errorMessage);
+                    }
+                } else {
+                    alert(errorMessage);
+                }
             }
         });
     }

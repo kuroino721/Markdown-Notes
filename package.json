@@ -1,5 +1,5 @@
 {
-  "name": "markdown_editor",
+  "name": "markdown_notes",
   "version": "1.0.0",
   "description": "WYSIWYG Markdown Editor built with Tauri and Milkdown",
   "type": "module",

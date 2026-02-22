@@ -5,7 +5,9 @@
 import { Adapter } from './types.js';
 
 // @ts-ignore
-export const isTauri = () => !!(window.IS_TAURI_ADAPTER || window.__TAURI_INTERNALS__ || window.__TAURI__);
+export const isTauri = () => {
+    return typeof window !== 'undefined' && (window as any).isTauri === true;
+};
 
 let adapter: Adapter | null = null;
 

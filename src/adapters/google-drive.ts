@@ -16,11 +16,7 @@ const getClientId = () => isTauri() ? CLIENT_ID_DESKTOP : CLIENT_ID_WEB;
 
 const SYNC_FILE_NAME = 'markdown_notes_sync.json';
 
-// Import invoke for Tauri commands
-let invoke: any;
-if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
-    import('@tauri-apps/api/core').then(m => { invoke = m.invoke; });
-}
+
 
 // Global declarations for Google APIs
 declare global {
@@ -38,7 +34,9 @@ let gapiInited = false;
 let gisInited = false;
 let pendingToken: string | null = null;
 
-const isTauri = (): boolean => !!(window.IS_TAURI_ADAPTER || window.__TAURI_INTERNALS__ || window.__TAURI__);
+const isTauri = (): boolean => {
+    return typeof window !== 'undefined' && (window as any).isTauri === true;
+};
 
 /**
  * Parse token from URL hash if returning from redirect flow
@@ -69,8 +67,16 @@ export function checkRedirectResponse(): boolean {
 export async function initGoogleDrive(): Promise<void> {
     const clientId = getClientId();
     if (!clientId || clientId.includes('YOUR_CLIENT_ID')) {
-        console.warn('[DEBUG] GoogleDriveService: Google Drive Client ID is not set. Please check your .env file or environment variables.');
+        const errorMsg = `[SYNC] Client ID is missing or invalid: ${clientId ? 'SET (masked)' : 'UNSET'}`;
+        console.warn(`[DEBUG] GoogleDriveService: ${errorMsg}`);
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('frontend_log', { level: 'warn', message: errorMsg });
         return;
+    }
+
+    if (isTauri()) {
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('frontend_log', { level: 'info', message: `[SYNC] Initializing G-Drive for Tauri. Client IDs: WEB=${!!CLIENT_ID_WEB}, DESKTOP=${!!CLIENT_ID_DESKTOP}` });
     }
 
     return new Promise((resolve) => {
@@ -173,6 +179,8 @@ export async function signInGoogleDrive(silent = false, loginHint: string | null
 
     // Use Authorization Code Flow with PKCE for Tauri
     if (isTauri() && !silent) {
+        const { invoke } = await import('@tauri-apps/api/core');
+
         const redirectUri = 'http://localhost:51737/';
         await invoke('frontend_log', { level: 'info', message: '[SYNC] Starting Auth (PKCE) for WSL2/Desktop' });
         await invoke('frontend_log', { level: 'info', message: `[SYNC] redirect_uri set to: ${redirectUri}` });
@@ -196,14 +204,18 @@ export async function signInGoogleDrive(silent = false, loginHint: string | null
                 code_challenge_method: 'S256'
             });
             const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+            await invoke('frontend_log', { level: 'info', message: `[SYNC] Auth URL generated (client_id: ${CLIENT_ID_DESKTOP?.substring(0, 10)}...)` });
 
             // 3. Start loopback server and wait for code
+            await invoke('frontend_log', { level: 'info', message: '[SYNC] Starting loopback server on 51737...' });
             const codePromise = invoke('start_google_auth_server');
 
             // 4. Open auth URL in system browser
+            await invoke('frontend_log', { level: 'info', message: '[SYNC] Opening external browser...' });
             await invoke('open_external_url', { url: authUrl });
 
             const code = await codePromise;
+            await invoke('frontend_log', { level: 'info', message: '[SYNC] Authorization code received from loopback server' });
 
             // 5. Exchange code for token
             await invoke('frontend_log', { level: 'info', message: '[SYNC] Exchanging code for token...' });
@@ -211,7 +223,7 @@ export async function signInGoogleDrive(silent = false, loginHint: string | null
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
-                    code: code,
+                    code: code as string,
                     client_id: CLIENT_ID_DESKTOP,
                     client_secret: CLIENT_SECRET_DESKTOP,
                     redirect_uri: redirectUri,
@@ -224,18 +236,19 @@ export async function signInGoogleDrive(silent = false, loginHint: string | null
             const tokenData = await tokenResponse.json();
 
             if (tokenData.error) {
-                await invoke('frontend_log', { level: 'error', message: `[SYNC] Token exchange error response: ${JSON.stringify(tokenData)}` });
+                const errorLog = `[SYNC] Token exchange error: ${tokenData.error} - ${tokenData.error_description || 'no description'}`;
+                await invoke('frontend_log', { level: 'error', message: errorLog });
                 throw new Error(`Token exchange failed: ${tokenData.error_description || tokenData.error}`);
             }
 
             const accessToken = tokenData.access_token;
             if (accessToken) {
-                await invoke('frontend_log', { level: 'info', message: '[SYNC] Token exchange successful' });
+                await invoke('frontend_log', { level: 'info', message: '[SYNC] Token exchange successful (Token received)' });
                 gapi.client.setToken({ access_token: accessToken });
                 localStorage.setItem('markdown_editor_gdrive_enabled', 'true');
                 return { access_token: accessToken };
             } else {
-                await invoke('frontend_log', { level: 'error', message: `[SYNC] No access token in response: ${JSON.stringify(tokenData)}` });
+                await invoke('frontend_log', { level: 'error', message: `[SYNC] No access token in response: ${JSON.stringify(tokenData).substring(0, 100)}...` });
                 throw new Error('No access token received from Google');
             }
         } catch (e: any) {

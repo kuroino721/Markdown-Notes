@@ -3,11 +3,14 @@ use url::Url;
 #[tauri::command]
 pub fn open_external_url(url: String) -> Result<(), String> {
     log::debug!("Attempting to open URL: {}", url);
+    std::fs::write("DEBUG_URL.txt", format!("Attempting to open: {}", url)).ok();
+
     if let Err(e) = opener::open_browser(&url) {
         log::warn!(
             "opener::open_browser failed: {}. Trying WSL fallback via powershell.exe",
             e
         );
+        std::fs::write("DEBUG_ERROR_OPENER.txt", format!("opener failed: {}", e)).ok();
 
         // WSL2 specific fallback: Use powershell.exe to open the browser on the Windows host
         std::process::Command::new("powershell.exe")
@@ -17,6 +20,11 @@ pub fn open_external_url(url: String) -> Result<(), String> {
             .spawn()
             .map_err(|err| {
                 log::error!("WSL fallback failed: {}", err);
+                std::fs::write(
+                    "DEBUG_ERROR_FALLBACK.txt",
+                    format!("fallback failed: {}", err),
+                )
+                .ok();
                 format!(
                     "Failed to open browser (opener error: {}, fallback error: {})",
                     e, err
@@ -38,17 +46,31 @@ pub fn frontend_log(level: String, message: String) {
 #[tauri::command]
 pub async fn start_google_auth_server() -> Result<String, String> {
     log::debug!("Command: start_google_auth_server called");
-    log::debug!("Attempting to bind auth server to 0.0.0.0:51737");
-    let server = tiny_http::Server::http("0.0.0.0:51737").map_err(|e| {
+    log::debug!("Attempting to bind auth server to 127.0.0.1:51737");
+    std::fs::write("DEBUG_SERVER_INIT.txt", "Attempting bind").ok();
+    let server = tiny_http::Server::http("127.0.0.1:51737").map_err(|e| {
         log::error!("Failed to start auth server: {}", e);
+        std::fs::write("DEBUG_SERVER_ERROR.txt", e.to_string()).ok();
         format!("Failed to start server: {}", e)
     })?;
 
-    log::info!("Auth server started on http://0.0.0.0:51737 (accessible via localhost from host)");
+    log::info!(
+        "Auth server started on http://127.0.0.1:51737 (accessible via localhost from host)"
+    );
+    std::fs::write("DEBUG_SERVER_STARTED.txt", "Server up and waiting").ok();
 
-    // We need to run the server in a loop
+    let start_time = std::time::Instant::now();
+    let timeout = std::time::Duration::from_secs(180); // 3 minutes timeout
+
     loop {
-        if let Ok(request) = server.recv() {
+        if start_time.elapsed() > timeout {
+            log::error!("Auth server timed out after 3 minutes");
+            std::fs::write("DEBUG_SERVER_TIMEOUT.txt", "Timed out").ok();
+            return Err("Authentication timed out. Please try again.".to_string());
+        }
+
+        // Use recv_timeout to avoid blocking forever, allowing us to check the timeout condition
+        if let Ok(Some(request)) = server.recv_timeout(std::time::Duration::from_secs(1)) {
             let url_str = request.url();
             log::info!("Auth server received request: {}", url_str);
 

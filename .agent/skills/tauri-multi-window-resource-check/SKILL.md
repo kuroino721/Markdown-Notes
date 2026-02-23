@@ -1,4 +1,5 @@
 ---
+name: tauri-multi-window-resource-check
 description: Tauri やマルチウィンドウアプリにおけるリソース（CSS/JS）読み込みの確認とデバッグ
 ---
 

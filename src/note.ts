@@ -10,6 +10,7 @@ import { callCommand } from '@milkdown/utils';
 import { remarkStringifyOptionsCtx, remarkPluginsCtx, editorViewCtx } from '@milkdown/core';
 import { Adapter, Note } from './adapters/types';
 import { splitListItem } from '@milkdown/prose/schema-list';
+import { TextSelection } from '@milkdown/prose/state';
 import {
   AUTO_SAVE_DELAY_MS,
   STORAGE_KEY_LINE_HEIGHT,
@@ -493,6 +494,39 @@ function setupEventListeners() {
   if (btnBack) {
     btnBack.addEventListener('click', async () => {
       if (adapter) await adapter.closeWindow();
+    });
+  }
+
+  // Focus editor when clicking anywhere in the container
+  const editorContainer = document.getElementById('editor-container');
+  if (editorContainer) {
+    editorContainer.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      // Focus if clicked on container, editor wrapper, or empty space
+      if (
+        target === editorContainer ||
+        target.id === 'editor' ||
+        target.classList.contains('milkdown') ||
+        target.classList.contains('crepe')
+      ) {
+        if (!isEditorMode && editorView) {
+          try {
+            editorView.focus();
+            const { state, dispatch } = editorView;
+            if (state && dispatch) {
+              // Place cursor at the end of the document
+              const endPos = state.doc.content.size;
+              const tr = state.tr.setSelection(TextSelection.create(state.doc, endPos));
+              dispatch(tr);
+            }
+          } catch (err) {
+            console.error('Failed to move cursor to end:', err);
+          }
+        } else if (isEditorMode) {
+          const sourceEditor = document.getElementById('source-editor');
+          if (sourceEditor) sourceEditor.focus();
+        }
+      }
     });
   }
 

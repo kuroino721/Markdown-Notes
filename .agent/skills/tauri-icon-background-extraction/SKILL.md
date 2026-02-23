@@ -1,4 +1,5 @@
 ---
+name: Tauri Icon Background Extraction
 description: Tauriアプリなどで、背景をもつ四角いアイコンからロゴ部分のみを抽出し、透過アイコン（フリーフォーム）を自動生成するためのベストプラクティス。
 ---
 

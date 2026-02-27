@@ -507,7 +507,8 @@ function setupEventListeners() {
         target === editorContainer ||
         target.id === 'editor' ||
         target.classList.contains('milkdown') ||
-        target.classList.contains('crepe')
+        target.classList.contains('crepe') ||
+        target.classList.contains('ProseMirror')
       ) {
         if (!isEditorMode && editorView) {
           try {
